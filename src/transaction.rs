@@ -82,7 +82,7 @@ impl TransactionBuilder {
     }
 
     /// Simulates the [`VersionedTransaction`] using
-    /// [`RpcClient::simulate_transaction_with_config`].
+    /// [`SolanaRpcProvider::simulate_transaction`].
     pub async fn simulate<S: Signers + ?Sized, T: SolanaRpcProvider>(
         &self,
         payer: &Pubkey,
@@ -106,7 +106,7 @@ impl TransactionBuilder {
     }
 
     /// Simulates, signs, and sends the transaction using
-    /// [`RpcClient::send_and_confirm_transaction`].
+    /// [`SolanaRpcProvider::send_and_confirm_transaction`].
     #[tracing::instrument(skip(rpc, signers), level = tracing::Level::INFO)]
     pub async fn send<S: Signers + ?Sized, T: SolanaRpcProvider>(
         &self,
