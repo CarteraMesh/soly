@@ -1,0 +1,169 @@
+permissions:
+  contents: read
+on:
+  push:
+    branches: [main]
+  pull_request:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+name: check
+jobs:
+  fmt:
+    runs-on: ${{ vars.RUNNER }}
+    name: nightly fmt
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - name: Install nightyly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - name: cargo fmt --check
+        run: |
+          cargo +nightly fmt --check --all
+  clippy:
+    runs-on: ${{ vars.RUNNER }}
+    name: ${{ matrix.toolchain }} / clippy / ${{ matrix.features }}
+    permissions:
+      contents: read
+      checks: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # Get early warning of new lints which are regularly introduced in beta channels.
+        toolchain: [stable, beta]
+        features:
+          - "default"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: ubicloud/rust-cache@v2
+        with:
+          cache-on-failure: "true"
+          cache-all-crates: "true"
+      - name: Install ${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy
+      - name: ${{ matrix.toolchain }} cargo clippy (${{ matrix.features }})
+        uses: giraffate/clippy-action@v1
+        with:
+          reporter: "github-pr-check"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          clippy_flags: ${{ matrix.features != 'default' && format('--features {0}', matrix.features) || '' }}
+  semver:
+    runs-on: ${{ vars.RUNNER }}
+    name: semver
+    if: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ubicloud/rust-cache@v2
+        with:
+          cache-on-failure: "true"
+          cache-all-crates: "true"
+          workspaces: |
+            . -> target
+          # Specifies what to use as the backend providing cache
+          # Can be set to "github", "buildjet", or "warpbuild"
+          # default: "github"
+      - name: Install stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: cargo-semver-checks
+        uses: obi1kenobi/cargo-semver-checks-action@v2
+        # with:
+        # feature-group: ${{ matrix.features != 'default' && matrix.features || 'default-features' }}
+  doc:
+    # run docs generation on nightly rather than stable. This enables features like
+    # https://doc.rust-lang.org/beta/unstable-book/language-features/doc-cfg.html which allows an
+    # API be documented as only available in some specific platforms.
+    #
+    runs-on: ubuntu-latest
+    name: nightly / doc
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: ubicloud/rust-cache@v2
+        with:
+          cache-on-failure: "true"
+          cache-all-crates: "true"
+          workspaces: |
+            . -> target
+          # Specifies what to use as the backend providing cache
+          # Can be set to "github", "buildjet", or "warpbuild"
+          # default: "github"
+      - name: Install nightly
+        uses: dtolnay/rust-toolchain@nightly
+      - name: Install cargo-docs-rs
+        uses: dtolnay/install@cargo-docs-rs
+      - name: cargo docs-rs
+        run: |
+          LIBS=$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.targets[] | .kind[] == "lib") | .name' | tr '\n' ' ')
+          for lib in $LIBS; do
+            cargo docs-rs -p $lib
+          done
+  hack:
+    # cargo-hack checks combinations of feature flags to ensure that features are all additive
+    # which is required for feature unification
+    runs-on: ${{ vars.RUNNER }}
+    name: ubuntu / stable / features
+    if: false
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: ubicloud/rust-cache@v2
+        with:
+          cache-on-failure: "true"
+          cache-all-crates: "true"
+      - name: Install stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: cargo install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
+      - name: cargo hack
+        run: cargo hack --feature-powerset check
+
+  cargo_sort:
+    runs-on: ${{ vars.RUNNER }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - uses: ubicloud/rust-cache@v2
+        with:
+          cache-on-failure: "true"
+          cache-all-crates: "true"
+          cache-workspace-crates: "true"
+          cache-bin: "true"
+      - name: Stable Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Install cargo-sort
+        run: cargo install --locked cargo-sort
+      - name: Check `Cargo.toml` sort
+        run: |
+          ./scripts/cargo-sort.sh
+
+  machete:
+    runs-on: ${{ vars.RUNNER }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - uses: ubicloud/rust-cache@v2
+        with:
+          cache-on-failure: "true"
+          cache-all-crates: "true"
+          cache-workspace-crates: "true"
+          cache-bin: "true"
+      - name: Stable Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Install `cargo-machete`
+        run: cargo install cargo-machete
+      - name: Check unused Cargo dependencies
+        run: cargo machete

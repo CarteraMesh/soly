@@ -1,0 +1,13 @@
+# Enable all features during release
+enable-all-features = false
+
+# Pre-release checks
+pre-release-commit-message = "chore: release soly v"
+
+# Tag settings
+tag-message = "chore: release v"
+tag-prefix = ""
+
+# Push and publish settings
+push = true
+publish = true

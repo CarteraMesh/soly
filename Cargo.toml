@@ -1,0 +1,24 @@
+[package]
+name = "soly"
+version = "0.1.0"
+edition = "2024"
+description = "Simple Transaction Builder and Sender for Solana"
+repository = "https://github.com/CarteraMesh/soly"
+license = "MIT"
+authors = ["gh@cartera-mesh.com"]
+documentation = "https://docs.rs/soly"
+homepage = "https://github.com/CarteraMesh/soly"
+keywords = []
+categories = []
+readme = "README.md"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tracing = { version = "0.1" }
+
+[dev-dependencies]
+anyhow = { version = "1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "serde"] }
+tokio = { version = "1", features = [ "full"] }
+dotenvy= "0.15"
+lazy_static = "1.4.0"
