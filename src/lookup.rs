@@ -24,9 +24,10 @@ fn get_multiple_accts(lookup_tables: &[Pubkey], rpc: &RpcClient) -> Result<Vec<O
 #[cfg(not(feature = "blocking"))]
 async fn get_multiple_accts(
     lookup_tables: &[Pubkey],
-    rpc: &RpcClient,
+    rpc: impl AsRef<RpcClient>,
 ) -> Result<Vec<Option<Account>>> {
-    rpc.get_multiple_accounts(lookup_tables)
+    rpc.as_ref()
+        .get_multiple_accounts(lookup_tables)
         .await
         .map_err(|e| Error::SolanaRpcError(format!("failed to get lookup table accounts: {e}")))
 }
@@ -88,7 +89,7 @@ fn process_lookup_tables(
 #[cfg(not(feature = "blocking"))]
 pub async fn fetch_lookup_tables(
     lookup_tables: &[Pubkey],
-    rpc: &RpcClient,
+    rpc: impl AsRef<RpcClient>,
 ) -> Result<Vec<AddressLookupTableAccount>> {
     if lookup_tables.is_empty() {
         return Ok(Vec::with_capacity(0));

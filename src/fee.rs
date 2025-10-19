@@ -1,15 +1,15 @@
-#[cfg(not(feature = "blocking"))]
-use solana_rpc_client::nonblocking::rpc_client::RpcClient;
-#[cfg(feature = "blocking")]
-use solana_rpc_client::rpc_client::RpcClient;
-#[cfg(not(feature = "blocking"))]
-use solana_rpc_client_api::response::RpcSimulateTransactionResult;
 use {
     super::{Error, Result, TransactionBuilder},
     solana_compute_budget_interface::ComputeBudgetInstruction,
     solana_pubkey::Pubkey,
-    solana_rpc_client_api::{config::RpcSimulateTransactionConfig, response::RpcPrioritizationFee},
+    solana_rpc_client_api::{
+        config::RpcSimulateTransactionConfig,
+        response::{RpcPrioritizationFee, RpcSimulateTransactionResult},
+    },
 };
+
+#[cfg(not(feature = "blocking"))]
+use crate::SolanaRpcProvider;
 
 const SOLANA_MAX_COMPUTE_UNITS: u32 = 1_400_000;
 const MAX_ACCEPTABLE_PRIORITY_FEE_MICROLAMPORTS: u64 = 90_000 * 1_000_000; // 0.00009 SOL per CU in microlamports
@@ -101,8 +101,8 @@ impl TransactionBuilder {
 
 #[cfg(not(feature = "blocking"))]
 impl TransactionBuilder {
-    pub async fn get_recent_prioritization_fees(
-        rpc: &RpcClient,
+    pub async fn get_recent_prioritization_fees<T: SolanaRpcProvider>(
+        rpc: &T,
         accounts: &[Pubkey],
     ) -> Result<Vec<RpcPrioritizationFee>> {
         rpc.get_recent_prioritization_fees(accounts)
@@ -112,10 +112,10 @@ impl TransactionBuilder {
             })
     }
 
-    pub async fn calc_fee(
+    pub async fn calc_fee<T: SolanaRpcProvider>(
         &self,
         payer: &Pubkey,
-        rpc: &RpcClient,
+        rpc: &T,
         accounts: &[Pubkey],
         max_prioritization_fee: u64,
         percentile: Option<u8>,
@@ -192,10 +192,10 @@ impl TransactionBuilder {
     ///
     /// Reference: <https://solana.com/developers/guides/advanced/how-to-use-priority-fees>
     #[tracing::instrument(skip(rpc, payer, accounts), level = tracing::Level::DEBUG)]
-    pub async fn with_priority_fees(
+    pub async fn with_priority_fees<T: SolanaRpcProvider>(
         self,
         payer: &Pubkey,
-        rpc: &RpcClient,
+        rpc: &T,
         accounts: &[Pubkey],
         max_prioritization_fee: u64,
         percentile: Option<u8>,

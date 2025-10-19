@@ -8,7 +8,7 @@ mod tests {
         solana_pubkey::{Pubkey, pubkey},
         solana_rpc_client::nonblocking::rpc_client::RpcClient,
         solana_signer::Signer,
-        soly::{InstructionBuilder, TransactionBuilder},
+        soly::{InstructionBuilder, NativeRpcWrapper, TransactionBuilder},
         std::{env, sync::Once},
         tracing::info,
         tracing_subscriber::{EnvFilter, fmt::format::FmtSpan},
@@ -44,7 +44,7 @@ mod tests {
     }
 
     #[allow(clippy::expect_fun_call)]
-    fn init() -> anyhow::Result<(Keypair, RpcClient)> {
+    fn init() -> anyhow::Result<(Keypair, NativeRpcWrapper)> {
         setup();
         let kp_file = env::var("KEYPAIR_FILE").ok();
         let owner = if let Some(kp) = kp_file {
@@ -60,7 +60,7 @@ mod tests {
         let url = env::var("RPC_URL").expect("RPC_URL is not set");
         info!("using RPC {url}");
         let rpc = RpcClient::new_with_commitment(url, CommitmentConfig::finalized());
-        Ok((owner, rpc))
+        Ok((owner, rpc.into()))
     }
 
     #[derive(BorshSerialize)]

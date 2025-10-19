@@ -1,9 +1,3 @@
-#[cfg(not(feature = "blocking"))]
-use solana_rpc_client::nonblocking::rpc_client::RpcClient;
-#[cfg(feature = "blocking")]
-use solana_rpc_client::rpc_client::RpcClient;
-#[cfg(not(feature = "blocking"))]
-use solana_rpc_client_api::response::RpcSimulateTransactionResult;
 use {
     super::{Error, InstructionBuilder, IntoInstruction, Result},
     base64::prelude::*,
@@ -12,13 +6,19 @@ use {
     solana_instruction::Instruction,
     solana_message::{AddressLookupTableAccount, VersionedMessage, v0::Message},
     solana_pubkey::Pubkey,
-    solana_rpc_client_api::config::RpcSimulateTransactionConfig,
+    solana_rpc_client_api::{
+        config::RpcSimulateTransactionConfig,
+        response::RpcSimulateTransactionResult,
+    },
     solana_signature::Signature,
     solana_signer::signers::Signers,
     solana_transaction::versioned::VersionedTransaction,
     std::fmt::Debug,
     tracing::debug,
 };
+
+#[cfg(not(feature = "blocking"))]
+use crate::SolanaRpcProvider;
 
 /// Builder/Helper for creating and sending Solana [`VersionedTransaction`]s,
 /// with [`AddressLookupTableAccount`] support
@@ -46,16 +46,14 @@ impl TransactionBuilder {}
 
 #[cfg(not(feature = "blocking"))]
 impl TransactionBuilder {
-    async fn get_latest_blockhash(rpc: &RpcClient) -> Result<Hash> {
-        rpc.get_latest_blockhash()
-            .await
-            .map_err(|e| Error::SolanaRpcError(format!("failed to get latest blockhash: {e}")))
+    async fn get_latest_blockhash<T: SolanaRpcProvider>(rpc: &T) -> Result<Hash> {
+        rpc.get_latest_blockhash().await
     }
 
-    pub async fn create_message(
+    pub async fn create_message<T: SolanaRpcProvider>(
         &self,
         payer: &Pubkey,
-        rpc: &RpcClient,
+        rpc: &T,
     ) -> Result<VersionedMessage> {
         Ok(match &self.address_lookup_tables {
             Some(accounts) => VersionedMessage::V0(Message::try_compile(
@@ -66,7 +64,7 @@ impl TransactionBuilder {
             )?),
             None => match self.lookup_tables_keys {
                 Some(ref keys) => {
-                    let accounts = super::lookup::fetch_lookup_tables(keys, rpc).await?;
+                    let accounts = rpc.get_lookup_table_accounts(keys).await?;
                     VersionedMessage::V0(Message::try_compile(
                         payer,
                         self.instructions.as_ref(),
@@ -85,44 +83,34 @@ impl TransactionBuilder {
 
     /// Simulates the [`VersionedTransaction`] using
     /// [`RpcClient::simulate_transaction_with_config`].
-    pub async fn simulate<S: Signers + ?Sized>(
+    pub async fn simulate<S: Signers + ?Sized, T: SolanaRpcProvider>(
         &self,
         payer: &Pubkey,
         signers: &S,
-        rpc: &RpcClient,
+        rpc: &T,
         config: RpcSimulateTransactionConfig,
     ) -> Result<RpcSimulateTransactionResult> {
         let tx = VersionedTransaction::try_new(self.create_message(payer, rpc).await?, signers)?;
         self.simulate_internal(rpc, &tx, config).await
     }
 
-    pub(super) async fn simulate_internal(
+    pub(super) async fn simulate_internal<T: SolanaRpcProvider>(
         &self,
-        rpc: &RpcClient,
+        rpc: &T,
         tx: &VersionedTransaction,
         config: RpcSimulateTransactionConfig,
     ) -> Result<RpcSimulateTransactionResult> {
         let transaction_base64 = BASE64_STANDARD.encode(bincode::serialize(&tx)?);
         debug!(tx = ?transaction_base64,  "simulating");
-        let result = rpc
-            .simulate_transaction_with_config(tx, config)
-            .await
-            .map_err(|e| Error::SolanaRpcError(format!("failed to simulate transaction: {e}")))?;
-
-        if let Some(e) = result.value.err {
-            let logs = result.value.logs.unwrap_or(Vec::new());
-            let msg = format!("{e}\nbase64: {transaction_base64}\n{}", logs.join("\n"));
-            return Err(Error::SolanaSimulateFailure(msg));
-        }
-        Ok(result.value)
+        rpc.simulate_transaction(tx, config).await
     }
 
     /// Simulates, signs, and sends the transaction using
     /// [`RpcClient::send_and_confirm_transaction`].
     #[tracing::instrument(skip(rpc, signers), level = tracing::Level::INFO)]
-    pub async fn send<S: Signers + ?Sized>(
+    pub async fn send<S: Signers + ?Sized, T: SolanaRpcProvider>(
         &self,
-        rpc: &RpcClient,
+        rpc: &T,
         payer: &Pubkey,
         signers: &S,
     ) -> Result<Signature> {
@@ -137,10 +125,10 @@ impl TransactionBuilder {
             .map_err(|e| Error::SolanaRpcError(format!("failed to send transaction: {e}")))
     }
 
-    pub async fn unsigned_tx(
+    pub async fn unsigned_tx<T: SolanaRpcProvider>(
         &self,
         payer: &Pubkey,
-        rpc: &RpcClient,
+        rpc: &T,
     ) -> Result<VersionedTransaction> {
         let message = self.create_message(payer, rpc).await?;
         let num_sigs = message.header().num_required_signatures as usize;

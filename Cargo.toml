@@ -17,6 +17,7 @@ default = []
 blocking = []
 
 [dependencies]
+async-trait = "0.1.89"
 base64 = "0.22"
 bincode = "1"
 bon = "3"
@@ -43,6 +44,7 @@ solana-system-interface = { version = "1", features = ["bincode"] }
 solana-transaction = { version = "2" }
 spl-memo = "6"
 thiserror = { version = "2", default-features = false }
+tokio = { version = "1", features = ["sync"] }
 tracing = { version = "0.1" }
 
 [dev-dependencies]
