@@ -35,6 +35,12 @@ pub enum Error {
     #[error("Invalid compute units {0} {1}")]
     InvalidComputeUnits(u64, String),
 
-    #[error("Priority fee too high. calculated fee: {0} hard coded ceiling: {1}")]
+    #[error(
+        "Priority fee too high. Calculated fee: {0} microlamports exceeds hard-coded ceiling: {1} \
+         microlamports"
+    )]
     PriorityFeeTooHigh(u64, u64),
+
+    #[error("Compute budget already present in instructions")]
+    ComputeBudgetAlreadyPresent,
 }

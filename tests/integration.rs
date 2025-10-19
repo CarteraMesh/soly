@@ -256,7 +256,7 @@ mod tests {
         let tx: TransactionBuilder = random_instructions(&payer).into();
         let tx = tx
             .with_memo("github.com/carteraMesh", &[&payer])
-            .with_memo("nitrogen", &[&payer])
+            .with_memo("soly", &[&payer])
             .with_lookup_keys(vec![TEST_LOOKUP_TABLE_ADDRESS])
             .with_priority_fees(
                 &payer,
@@ -299,13 +299,13 @@ mod tests {
         let tx: TransactionBuilder = random_instructions(&payer).into();
         let sig = tx
             .with_memo("github.com/carteraMesh", &[&payer])
-            .with_memo("nitrogen", &[&payer])
+            .with_memo("soly", &[&payer])
             .with_lookup_keys(vec![TEST_LOOKUP_TABLE_ADDRESS])
             .with_priority_fees(
                 &payer,
                 &rpc,
                 &[solana_system_interface::program::ID, spl_memo::ID],
-                1_000_000,
+                u64::MAX,
                 None,
             )
             .await?
@@ -319,7 +319,7 @@ mod tests {
         let tx: TransactionBuilder = random_instructions(&payer).into();
         let tx = tx
             .with_memo("github.com/carteraMesh", &[&payer])
-            .with_memo("nitrogen", &[&payer])
+            .with_memo("soly", &[&payer])
             .prepend_compute_budget_instructions(1_000_000, 200_000)?;
 
         assert_eq!(
@@ -385,7 +385,7 @@ mod tests {
         #[tokio::test]
         async fn test_lookup_table_tx() -> anyhow::Result<()> {
             let (kp, rpc) = init()?;
-            let pkg = "github.com/carteraMesh/nitrogen";
+            let pkg = "github.com/carteraMesh/soly";
             let op = "lookup_tables_keys";
             let payer = kp.pubkey();
             let sig = TransactionBuilder::builder()

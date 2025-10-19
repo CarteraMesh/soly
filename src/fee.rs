@@ -12,11 +12,20 @@ use {
 };
 
 const SOLANA_MAX_COMPUTE_UNITS: u32 = 1_400_000;
-const MAX_ACCEPTABLE_PRIORITY_FEE: u64 = 50_000_000;
+const MAX_ACCEPTABLE_PRIORITY_FEE_MICROLAMPORTS: u64 = 90_000 * 1_000_000; // 0.00009 SOL per CU in microlamports
 
+/// Result of priority fee calculation containing the computed fee and compute
+/// units.
+///
+/// This struct is returned by [`TransactionBuilder::calc_fee`] to allow users
+/// to inspect the calculated fees before applying them to a transaction.
+#[derive(Debug, Clone)]
 pub struct CalcFeeResult {
+    /// The calculated priority fee in microlamports per compute unit
     pub priority_fee: u64,
+    /// The computed units required for the transaction (with 10% buffer)
     pub units: u32,
+    /// Result from RPC call get_recent_prioritization_fees
     pub prioritization_fees: Vec<RpcPrioritizationFee>,
 }
 
@@ -25,8 +34,8 @@ impl TransactionBuilder {
     /// ComputeBudget instructions are already present.
     ///
     ///
-    /// Use [`TransactionBuilder::unsigned_tx`] to get a transaction for
-    /// fee simulation.
+    /// Use [`TransactionBuilder::unsigned_tx`] to get a transaction for your
+    /// own fee simulation.
     pub fn prepend_compute_budget_instructions(
         mut self,
         units: u32,
@@ -37,10 +46,7 @@ impl TransactionBuilder {
             .iter()
             .any(|ix| ix.program_id == solana_compute_budget_interface::ID)
         {
-            return Err(crate::Error::InvalidComputeUnits(
-                units.into(),
-                "computes is about max solana compute units".to_owned(),
-            ));
+            return Err(crate::Error::ComputeBudgetAlreadyPresent);
         }
 
         self.instructions.splice(0..0, vec![
@@ -50,7 +56,7 @@ impl TransactionBuilder {
         Ok(self)
     }
 
-    pub fn calc_fee_internal(
+    fn calc_fee_internal(
         &self,
         prioritization_fees: Vec<RpcPrioritizationFee>,
         sim_result: RpcSimulateTransactionResult,
@@ -66,10 +72,10 @@ impl TransactionBuilder {
 
         let index = (sorted_fees.len() * percentile as usize).saturating_sub(1) / 100;
         let priority_fee = sorted_fees[index].min(max_prioritization_fee);
-        if priority_fee > MAX_ACCEPTABLE_PRIORITY_FEE {
+        if priority_fee > MAX_ACCEPTABLE_PRIORITY_FEE_MICROLAMPORTS {
             return Err(crate::Error::PriorityFeeTooHigh(
                 priority_fee,
-                MAX_ACCEPTABLE_PRIORITY_FEE,
+                MAX_ACCEPTABLE_PRIORITY_FEE_MICROLAMPORTS,
             ));
         }
 
@@ -77,7 +83,7 @@ impl TransactionBuilder {
             .units_consumed
             .ok_or(crate::Error::InvalidComputeUnits(
                 0,
-                "RPC returned invalid units".to_string(),
+                "RPC returned no units".to_string(),
             ))?
             .try_into()?;
         // Add buffer but cap at Solana's maximum
@@ -119,6 +125,11 @@ impl TransactionBuilder {
         }
         let prioritization_fees =
             TransactionBuilder::get_recent_prioritization_fees(rpc, accounts).await?;
+        if prioritization_fees.is_empty() {
+            return Err(crate::Error::SolanaRpcError(
+                "No prioritization fees available".to_string(),
+            ));
+        }
         let tx = self.unsigned_tx(payer, rpc).await?;
         let sim_result = self
             .simulate_internal(rpc, &tx, RpcSimulateTransactionConfig {
@@ -163,8 +174,8 @@ impl TransactionBuilder {
     ///     .with_priority_fees(
     ///         &payer,
     ///         &rpc,
-    ///         Some(5_000_000), // Cap at 5M microlamports/CU
     ///         &[solana_system_interface::program::ID],
+    ///         5_000_000, // Cap at 5M microlamports/CU
     ///         Some(50), // Use 50th percentile (median)
     ///     )
     ///     .await?;
