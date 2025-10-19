@@ -262,7 +262,7 @@ mod tests {
                 &payer,
                 &rpc,
                 &[solana_system_interface::program::ID, spl_memo::ID],
-                Some(1_000_000),
+                1_000_000,
                 Some(50),
             )
             .await?;
@@ -280,7 +280,7 @@ mod tests {
                 &payer,
                 &rpc,
                 &[solana_system_interface::program::ID, spl_memo::ID],
-                Some(1_000_000),
+                1_000_000,
                 Some(50),
             )
             .await?;
@@ -305,7 +305,7 @@ mod tests {
                 &payer,
                 &rpc,
                 &[solana_system_interface::program::ID, spl_memo::ID],
-                None,
+                1_000_000,
                 None,
             )
             .await?
