@@ -5,7 +5,13 @@ mod fee;
 mod lookup;
 mod transaction;
 use {borsh::BorshSerialize, solana_instruction::Instruction};
-pub use {error::*, lookup::*, nitrogen_instruction_builder::*, transaction::*};
+pub use {
+    error::*,
+    fee::CalcFeeResult,
+    lookup::*,
+    nitrogen_instruction_builder::*,
+    transaction::*,
+};
 pub type Result<T> = std::result::Result<T, Error>;
 
 impl From<Instruction> for TransactionBuilder {
