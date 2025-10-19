@@ -58,7 +58,7 @@ cargo +nightly fmt --all -- --check
 ## License
 
  * MIT license
-   ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+   [LICENSE-MIT](LICENSE-MIT)
 
 at your option.
 

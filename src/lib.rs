@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 mod error;
+mod fee;
 mod lookup;
 mod transaction;
 use {borsh::BorshSerialize, solana_instruction::Instruction};
