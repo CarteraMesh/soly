@@ -34,4 +34,7 @@ pub enum Error {
 
     #[error("Invalid compute units {0} {1}")]
     InvalidComputeUnits(u64, String),
+
+    #[error("Priority fee too high. calculated fee: {0} hard coded ceiling: {1}")]
+    PriorityFeeTooHigh(u64, u64),
 }
