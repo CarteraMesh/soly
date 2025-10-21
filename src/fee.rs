@@ -166,7 +166,7 @@ impl TransactionBuilder {
     /// ```no_run
     /// # use soly::TransactionBuilder;
     /// # use solana_pubkey::Pubkey;
-    /// # async fn example(builder: TransactionBuilder, payer: Pubkey, rpc: soly::Noop) -> anyhow::Result<()> {
+    /// # async fn example(builder: TransactionBuilder, payer: Pubkey, rpc: soly::NoopRpc) -> anyhow::Result<()> {
     /// let tx = builder
     ///     .with_priority_fees(
     ///         &payer,
