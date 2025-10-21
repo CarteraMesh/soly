@@ -6,7 +6,7 @@ use {
     solana_pubkey::Pubkey,
     solana_rpc_client_api::response::RpcPrioritizationFee,
     solana_signature::Signature,
-    tracing::{debug, trace},
+    tracing::debug,
 };
 
 #[async_trait::async_trait]
@@ -44,8 +44,11 @@ impl SolanaRpcProvider for TraceNativeProvider {
         tx: &solana_transaction::versioned::VersionedTransaction,
         config: solana_rpc_client_api::config::RpcSimulateTransactionConfig,
     ) -> Result<solana_rpc_client_api::response::RpcSimulateTransactionResult> {
-        let transaction_base64 = BASE64_STANDARD.encode(bincode::serialize(&tx)?);
-        debug!(tx =? transaction_base64);
+        if tracing::enabled!(tracing::Level::DEBUG) {
+            // This is safe to log, as this is sent on a PUBLIC blockchain for all to see.
+            let transaction_base64 = BASE64_STANDARD.encode(bincode::serialize(&tx)?);
+            debug!(simulate_tx =? transaction_base64);
+        }
         let result = self
             .0
             .simulate_transaction_with_config(tx, config)
@@ -67,8 +70,6 @@ impl SolanaRpcProvider for TraceNativeProvider {
         &self,
         tx: &solana_transaction::versioned::VersionedTransaction,
     ) -> Result<Signature> {
-        let transaction_base64 = BASE64_STANDARD.encode(bincode::serialize(&tx)?);
-        trace!(tx =? transaction_base64);
         self.0
             .send_and_confirm_transaction(tx)
             .await

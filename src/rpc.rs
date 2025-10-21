@@ -73,13 +73,15 @@ pub enum RpcMethod {
     Fees,
 }
 
-/// A simple counter provider for tracking RPC method calls
+/// A testing utility which implements a simple counter for tracking RPC method
+/// calls.
 ///
-/// This provider is useful for testing and debugging purposes, as it allows you
-/// to track the number of times each RPC method is called.
+/// **NOTE**: not meant for production use
+///
+/// This provider is useful for testing and debugging purposes
 pub struct CounterRpcProvider<T: SolanaRpcProvider> {
     inner: T,
-    pub(super) counters: DashMap<RpcMethod, u8>,
+    pub(super) counters: DashMap<RpcMethod, u64>,
 }
 
 impl<T: SolanaRpcProvider> From<T> for CounterRpcProvider<T> {
@@ -97,6 +99,42 @@ impl<T: SolanaRpcProvider> CounterRpcProvider<T> {
         counters.insert(RpcMethod::Send, 0);
         counters.insert(RpcMethod::Fees, 0);
         Self { inner, counters }
+    }
+}
+
+#[async_trait::async_trait]
+impl<T: SolanaRpcProvider + Send + Sync> SolanaRpcProvider for Arc<T> {
+    async fn get_recent_prioritization_fees(
+        &self,
+        accounts: &[Pubkey],
+    ) -> Result<Vec<RpcPrioritizationFee>> {
+        (**self).get_recent_prioritization_fees(accounts).await
+    }
+
+    async fn get_lookup_table_accounts(
+        &self,
+        pubkeys: &[Pubkey],
+    ) -> Result<Vec<AddressLookupTableAccount>> {
+        (**self).get_lookup_table_accounts(pubkeys).await
+    }
+
+    async fn get_latest_blockhash(&self) -> Result<Hash> {
+        (**self).get_latest_blockhash().await
+    }
+
+    async fn simulate_transaction(
+        &self,
+        tx: &solana_transaction::versioned::VersionedTransaction,
+        config: solana_rpc_client_api::config::RpcSimulateTransactionConfig,
+    ) -> Result<RpcSimulateTransactionResult> {
+        (**self).simulate_transaction(tx, config).await
+    }
+
+    async fn send_and_confirm_transaction(
+        &self,
+        tx: &solana_transaction::versioned::VersionedTransaction,
+    ) -> Result<Signature> {
+        (**self).send_and_confirm_transaction(tx).await
     }
 }
 
@@ -148,41 +186,5 @@ mod noop {
         ) -> Result<Signature> {
             Ok(Signature::default())
         }
-    }
-}
-
-#[async_trait::async_trait]
-impl<T: SolanaRpcProvider + Send + Sync> SolanaRpcProvider for Arc<T> {
-    async fn get_recent_prioritization_fees(
-        &self,
-        accounts: &[Pubkey],
-    ) -> Result<Vec<RpcPrioritizationFee>> {
-        (**self).get_recent_prioritization_fees(accounts).await
-    }
-
-    async fn get_lookup_table_accounts(
-        &self,
-        pubkeys: &[Pubkey],
-    ) -> Result<Vec<AddressLookupTableAccount>> {
-        (**self).get_lookup_table_accounts(pubkeys).await
-    }
-
-    async fn get_latest_blockhash(&self) -> Result<Hash> {
-        (**self).get_latest_blockhash().await
-    }
-
-    async fn simulate_transaction(
-        &self,
-        tx: &solana_transaction::versioned::VersionedTransaction,
-        config: solana_rpc_client_api::config::RpcSimulateTransactionConfig,
-    ) -> Result<RpcSimulateTransactionResult> {
-        (**self).simulate_transaction(tx, config).await
-    }
-
-    async fn send_and_confirm_transaction(
-        &self,
-        tx: &solana_transaction::versioned::VersionedTransaction,
-    ) -> Result<Signature> {
-        (**self).send_and_confirm_transaction(tx).await
     }
 }

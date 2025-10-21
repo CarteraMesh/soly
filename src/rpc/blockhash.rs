@@ -121,6 +121,12 @@ mod tests {
         assert_eq!(1, counter.get_counter(&crate::RpcMethod::Lookup));
         assert_eq!(1, counter.get_counter(&crate::RpcMethod::Simulate));
         assert_eq!(1, counter.get_counter(&crate::RpcMethod::Send));
+
+        counter.reset_counters();
+        assert_eq!(0, counter.get_counter(&crate::RpcMethod::Fees));
+        assert_eq!(0, counter.get_counter(&crate::RpcMethod::Lookup));
+        assert_eq!(0, counter.get_counter(&crate::RpcMethod::Simulate));
+        assert_eq!(0, counter.get_counter(&crate::RpcMethod::Send));
         Ok(())
     }
 }

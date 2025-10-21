@@ -43,10 +43,6 @@ impl SolanaRpcProvider for NativeRpcWrapper {
         tx: &solana_transaction::versioned::VersionedTransaction,
         config: solana_rpc_client_api::config::RpcSimulateTransactionConfig,
     ) -> Result<solana_rpc_client_api::response::RpcSimulateTransactionResult> {
-        if tracing::enabled!(tracing::Level::DEBUG) {
-            let transaction_base64 = BASE64_STANDARD.encode(bincode::serialize(&tx)?);
-            debug!(simulate_tx =? transaction_base64);
-        }
         let result = self
             .0
             .simulate_transaction_with_config(tx, config)

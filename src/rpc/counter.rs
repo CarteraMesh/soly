@@ -9,7 +9,10 @@ use {
 };
 
 impl<T: SolanaRpcProvider> CounterRpcProvider<T> {
-    pub fn get_counter(&self, method: &RpcMethod) -> u8 {
+    /// Get the counter for a given method
+    ///
+    /// **Panics** if the method is not found
+    pub fn get_counter(&self, method: &RpcMethod) -> u64 {
         *self.counters.get(method).unwrap()
     }
 

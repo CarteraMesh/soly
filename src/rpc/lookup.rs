@@ -24,23 +24,30 @@ impl<T: SolanaRpcProvider> LookupTableCacheProvider<T> {
     }
 
     /// Checks if the lookup table cache is empty.
+    #[must_use]
     pub async fn is_empty(&self) -> bool {
         self.lookup_cache.entry_count() == 0
     }
 
     /// Checks if the negative lookup table cache is empty.
+    #[must_use]
     pub async fn is_empty_negative(&self) -> bool {
         self.negative_cache.entry_count() == 0
     }
 
+    #[must_use]
     pub async fn len(&self) -> u64 {
         self.lookup_cache.entry_count()
     }
 
+    #[must_use]
     pub async fn len_negative(&self) -> u64 {
         self.negative_cache.entry_count()
     }
 
+    /// Returns the total number of entries in both lookup table and negative
+    /// caches.
+    #[must_use]
     pub async fn total(&self) -> u64 {
         self.len().await + self.len_negative().await
     }
@@ -282,10 +289,18 @@ mod tests {
         assert_eq!(2, results.len());
         assert_eq!(2, lookup_cache.len().await);
         assert_eq!(1, lookup_cache.len_negative().await);
+        assert_eq!(3, lookup_cache.total().await);
 
         sleep(Duration::from_secs(1)).await;
         lookup_cache.sync().await;
         assert!(lookup_cache.is_empty().await);
+        assert!(lookup_cache.is_empty_negative().await);
+        let _ = lookup_cache.get_lookup_table_accounts(&query).await?;
+        lookup_cache.sync().await;
+        lookup_cache.clear_lookups().await;
+        assert!(lookup_cache.is_empty().await);
+        assert!(!lookup_cache.is_empty_negative().await);
+        lookup_cache.clear_negative().await;
         assert!(lookup_cache.is_empty_negative().await);
         Ok(())
     }
