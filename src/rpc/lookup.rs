@@ -136,8 +136,8 @@ impl<T: SolanaRpcProvider + Send + Sync> SolanaRpcProvider for LookupTableCacheP
     /// **NOTE** the order of the results does not matter.
     /// If pubkeys = [A, B, C] and cache has [A, C]:
     /// result = [A, C]  // from cache
-    /// result.extend([B])  // fetched
-    /// Final: [A, C, B]  // THIS IS VALID.
+    /// result.extend(\[B\])  // fetched
+    /// Final: \[A, C, B\]  // THIS IS VALID
     async fn get_lookup_table_accounts(
         &self,
         pubkeys: &[Pubkey],
