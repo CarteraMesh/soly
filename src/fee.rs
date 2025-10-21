@@ -1,5 +1,6 @@
 use {
     super::{Error, Result, TransactionBuilder},
+    crate::SolanaRpcProvider,
     solana_compute_budget_interface::ComputeBudgetInstruction,
     solana_pubkey::Pubkey,
     solana_rpc_client_api::{
@@ -7,9 +8,6 @@ use {
         response::{RpcPrioritizationFee, RpcSimulateTransactionResult},
     },
 };
-
-#[cfg(not(feature = "blocking"))]
-use crate::SolanaRpcProvider;
 
 const SOLANA_MAX_COMPUTE_UNITS: u32 = 1_400_000;
 const MAX_ACCEPTABLE_PRIORITY_FEE_MICROLAMPORTS: u64 = 90_000 * 1_000_000; // 0.00009 SOL per CU in microlamports
@@ -99,7 +97,6 @@ impl TransactionBuilder {
     }
 }
 
-#[cfg(not(feature = "blocking"))]
 impl TransactionBuilder {
     pub async fn get_recent_prioritization_fees<T: SolanaRpcProvider>(
         rpc: &T,
@@ -169,7 +166,7 @@ impl TransactionBuilder {
     /// ```no_run
     /// # use soly::TransactionBuilder;
     /// # use solana_pubkey::Pubkey;
-    /// # async fn example(builder: TransactionBuilder, payer: Pubkey, rpc: solana_rpc_client::nonblocking::rpc_client::RpcClient) -> Result<(), Box<dyn std::error::Error>> {
+    /// # async fn example(builder: TransactionBuilder, payer: Pubkey, rpc: soly::Noop) -> anyhow::Result<()> {
     /// let tx = builder
     ///     .with_priority_fees(
     ///         &payer,

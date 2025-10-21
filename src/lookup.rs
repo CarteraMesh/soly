@@ -1,7 +1,3 @@
-#[cfg(not(feature = "blocking"))]
-use solana_rpc_client::nonblocking::rpc_client::RpcClient;
-#[cfg(feature = "blocking")]
-use solana_rpc_client::rpc_client::RpcClient;
 use {
     crate::{Error, Result},
     solana_account::Account,
@@ -11,17 +7,11 @@ use {
     },
     solana_message::AddressLookupTableAccount,
     solana_pubkey::Pubkey,
+    solana_rpc_client::nonblocking::rpc_client::RpcClient,
     std::str::FromStr,
     tracing::debug,
 };
 
-#[cfg(feature = "blocking")]
-fn get_multiple_accts(lookup_tables: &[Pubkey], rpc: &RpcClient) -> Result<Vec<Option<Account>>> {
-    rpc.get_multiple_accounts(lookup_tables)
-        .map_err(|e| Error::SolanaRpcError(format!("failed to get lookup table accounts: {e}")))
-}
-
-#[cfg(not(feature = "blocking"))]
 async fn get_multiple_accts(
     lookup_tables: &[Pubkey],
     rpc: impl AsRef<RpcClient>,
@@ -86,7 +76,6 @@ fn process_lookup_tables(
 }
 
 /// Fetches lookup tables from the Solana blockchain.
-#[cfg(not(feature = "blocking"))]
 pub async fn fetch_lookup_tables(
     lookup_tables: &[Pubkey],
     rpc: impl AsRef<RpcClient>,
@@ -94,24 +83,8 @@ pub async fn fetch_lookup_tables(
     if lookup_tables.is_empty() {
         return Ok(Vec::with_capacity(0));
     }
-    debug!(
-        "fetching {} accounts for lookup table state",
-        lookup_tables.len()
-    );
+    debug!(lookup_tables =? lookup_tables.len(), "fetching lookup tables");
     let accounts = get_multiple_accts(lookup_tables, rpc).await?;
-    process_lookup_tables(lookup_tables, accounts)
-}
-
-/// Fetches lookup tables from the Solana blockchain.
-#[cfg(feature = "blocking")]
-pub fn fetch_lookup_tables(
-    lookup_tables: &[Pubkey],
-    rpc: &RpcClient,
-) -> Result<Vec<AddressLookupTableAccount>> {
-    if lookup_tables.is_empty() {
-        return Ok(Vec::with_capacity(0));
-    }
-    let accounts = get_multiple_accts(lookup_tables, rpc)?;
     process_lookup_tables(lookup_tables, accounts)
 }
 

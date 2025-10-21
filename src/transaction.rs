@@ -1,6 +1,6 @@
 use {
-    super::{Error, InstructionBuilder, IntoInstruction, Result},
-    base64::prelude::*,
+    super::{InstructionBuilder, IntoInstruction, Result},
+    crate::SolanaRpcProvider,
     borsh::BorshSerialize,
     solana_hash::Hash,
     solana_instruction::Instruction,
@@ -14,11 +14,7 @@ use {
     solana_signer::signers::Signers,
     solana_transaction::versioned::VersionedTransaction,
     std::fmt::Debug,
-    tracing::debug,
 };
-
-#[cfg(not(feature = "blocking"))]
-use crate::SolanaRpcProvider;
 
 /// Builder/Helper for creating and sending Solana [`VersionedTransaction`]s,
 /// with [`AddressLookupTableAccount`] support
@@ -41,10 +37,6 @@ impl Debug for TransactionBuilder {
     }
 }
 
-#[cfg(feature = "blocking")]
-impl TransactionBuilder {}
-
-#[cfg(not(feature = "blocking"))]
 impl TransactionBuilder {
     async fn get_latest_blockhash<T: SolanaRpcProvider>(rpc: &T) -> Result<Hash> {
         rpc.get_latest_blockhash().await
@@ -100,8 +92,6 @@ impl TransactionBuilder {
         tx: &VersionedTransaction,
         config: RpcSimulateTransactionConfig,
     ) -> Result<RpcSimulateTransactionResult> {
-        let transaction_base64 = BASE64_STANDARD.encode(bincode::serialize(&tx)?);
-        debug!(tx = ?transaction_base64,  "simulating");
         rpc.simulate_transaction(tx, config).await
     }
 
@@ -120,9 +110,7 @@ impl TransactionBuilder {
             ..Default::default()
         })
         .await?;
-        rpc.send_and_confirm_transaction(&tx)
-            .await
-            .map_err(|e| Error::SolanaRpcError(format!("failed to send transaction: {e}")))
+        rpc.send_and_confirm_transaction(&tx).await
     }
 
     pub async fn unsigned_tx<T: SolanaRpcProvider>(

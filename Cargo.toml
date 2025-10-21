@@ -8,21 +8,21 @@ license = "MIT"
 authors = ["gh@cartera-mesh.com"]
 documentation = "https://docs.rs/soly"
 homepage = "https://github.com/CarteraMesh/soly"
-keywords = []
-categories = []
+keywords = ["solana", "blockchain", "crypto"]
+categories = ["finance"]
 readme = "README.md"
 
 [features]
 default = []
-blocking = []
 
 [dependencies]
-async-trait = "0.1.89"
+async-trait = "0.1"
 base64 = "0.22"
 bincode = "1"
 bon = "3"
 borsh = { version = "1" }
-dashmap = "6.1.0"
+dashmap = "6"
+moka = { version = "0.12", features = ["async-lock", "sync", "future"] }
 nitrogen-instruction-builder = { git = "https://github.com/CarteraMesh/nitrogen.git", branch = "main" }
 solana-account = "2"
 solana-account-decoder = "2"
@@ -45,12 +45,12 @@ solana-system-interface = { version = "1", features = ["bincode"] }
 solana-transaction = { version = "2" }
 spl-memo = "6"
 thiserror = { version = "2", default-features = false }
-tokio = { version = "1", features = ["sync"] }
 tracing = { version = "0.1" }
 
 [dev-dependencies]
 anyhow = { version = "1" }
 dotenvy = "0.15"
 lazy_static = "1.4.0"
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
 tokio = { version = "1", features = [ "full"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "serde"] }
