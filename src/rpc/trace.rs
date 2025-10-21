@@ -63,8 +63,6 @@ impl SolanaRpcProvider for TraceNativeProvider {
         Ok(result.value)
     }
 
-    /// TransactionBuilder calls [`TransactionBuilder::simulate`] which will
-    /// show base64 encoded transaction via debug! Hence why this is debug
     #[tracing::instrument(skip_all, level = tracing::Level::INFO)]
     async fn send_and_confirm_transaction(
         &self,
