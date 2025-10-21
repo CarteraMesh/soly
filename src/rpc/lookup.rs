@@ -60,10 +60,12 @@ impl<T: SolanaRpcProvider> LookupTableCacheProvider<T> {
 
     pub async fn clear_lookups(&self) {
         self.lookup_cache.invalidate_all();
+        self.lookup_cache.run_pending_tasks().await;
     }
 
     pub async fn clear_negative(&self) {
         self.negative_cache.invalidate_all();
+        self.negative_cache.run_pending_tasks().await;
     }
 
     /// Runs pending tasks on both caches to ensure counts are accurate.
@@ -136,8 +138,8 @@ impl<T: SolanaRpcProvider + Send + Sync> SolanaRpcProvider for LookupTableCacheP
     /// **NOTE** the order of the results does not matter.
     /// If pubkeys = [A, B, C] and cache has [A, C]:
     /// result = [A, C]  // from cache
-    /// result.extend([ B ])  // fetched
-    /// Final: [ A, C, B ]  // THIS IS VALID
+    /// result.extend(\[ B \])  // fetched
+    /// Final: \[ A, C, B \]  // THIS IS VALID
     async fn get_lookup_table_accounts(
         &self,
         pubkeys: &[Pubkey],
