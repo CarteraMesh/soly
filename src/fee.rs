@@ -1,14 +1,12 @@
-#[cfg(not(feature = "blocking"))]
-use solana_rpc_client::nonblocking::rpc_client::RpcClient;
-#[cfg(feature = "blocking")]
-use solana_rpc_client::rpc_client::RpcClient;
-#[cfg(not(feature = "blocking"))]
-use solana_rpc_client_api::response::RpcSimulateTransactionResult;
 use {
     super::{Error, Result, TransactionBuilder},
+    crate::SolanaRpcProvider,
     solana_compute_budget_interface::ComputeBudgetInstruction,
     solana_pubkey::Pubkey,
-    solana_rpc_client_api::{config::RpcSimulateTransactionConfig, response::RpcPrioritizationFee},
+    solana_rpc_client_api::{
+        config::RpcSimulateTransactionConfig,
+        response::{RpcPrioritizationFee, RpcSimulateTransactionResult},
+    },
 };
 
 const SOLANA_MAX_COMPUTE_UNITS: u32 = 1_400_000;
@@ -99,10 +97,9 @@ impl TransactionBuilder {
     }
 }
 
-#[cfg(not(feature = "blocking"))]
 impl TransactionBuilder {
-    pub async fn get_recent_prioritization_fees(
-        rpc: &RpcClient,
+    pub async fn get_recent_prioritization_fees<T: SolanaRpcProvider>(
+        rpc: &T,
         accounts: &[Pubkey],
     ) -> Result<Vec<RpcPrioritizationFee>> {
         rpc.get_recent_prioritization_fees(accounts)
@@ -112,10 +109,10 @@ impl TransactionBuilder {
             })
     }
 
-    pub async fn calc_fee(
+    pub async fn calc_fee<T: SolanaRpcProvider>(
         &self,
         payer: &Pubkey,
-        rpc: &RpcClient,
+        rpc: &T,
         accounts: &[Pubkey],
         max_prioritization_fee: u64,
         percentile: Option<u8>,
@@ -169,7 +166,7 @@ impl TransactionBuilder {
     /// ```no_run
     /// # use soly::TransactionBuilder;
     /// # use solana_pubkey::Pubkey;
-    /// # async fn example(builder: TransactionBuilder, payer: Pubkey, rpc: solana_rpc_client::nonblocking::rpc_client::RpcClient) -> Result<(), Box<dyn std::error::Error>> {
+    /// # async fn example(builder: TransactionBuilder, payer: Pubkey, rpc: soly::Noop) -> anyhow::Result<()> {
     /// let tx = builder
     ///     .with_priority_fees(
     ///         &payer,
@@ -192,10 +189,10 @@ impl TransactionBuilder {
     ///
     /// Reference: <https://solana.com/developers/guides/advanced/how-to-use-priority-fees>
     #[tracing::instrument(skip(rpc, payer, accounts), level = tracing::Level::DEBUG)]
-    pub async fn with_priority_fees(
+    pub async fn with_priority_fees<T: SolanaRpcProvider>(
         self,
         payer: &Pubkey,
-        rpc: &RpcClient,
+        rpc: &T,
         accounts: &[Pubkey],
         max_prioritization_fee: u64,
         percentile: Option<u8>,

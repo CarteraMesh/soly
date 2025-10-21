@@ -58,9 +58,9 @@ jobs:
           RUST_LOG: info,soly=debug
         run: |
           if [ "${{ matrix.features }}" == "default" ]; then
-            cargo llvm-cov --locked --lcov --output-path lcov-${{ matrix.features }}.info
+            cargo llvm-cov --locked --lcov --output-path lcov-${{ matrix.features }}.info -- --nocapture
           else
-            cargo llvm-cov --locked --features "${{ matrix.features }}" --lcov --output-path lcov-${{ matrix.features }}.info
+            cargo llvm-cov --locked --features "${{ matrix.features }}" --lcov --output-path lcov-${{ matrix.features }}.info  -- --nocapture
           fi
       - name: Record Rust version
         run: echo "RUST=$(rustc --version)" >> "$GITHUB_ENV"

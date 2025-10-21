@@ -43,4 +43,10 @@ pub enum Error {
 
     #[error("Compute budget already present in instructions")]
     ComputeBudgetAlreadyPresent,
+
+    #[error("Internal moka cache error {0}")]
+    MokaCacheError(String),
+
+    #[error("Lookup table miss")]
+    LookupTableMiss,
 }
