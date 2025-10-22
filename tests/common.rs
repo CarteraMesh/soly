@@ -44,6 +44,15 @@ pub fn setup() {
 #[allow(clippy::expect_fun_call)]
 pub fn init() -> anyhow::Result<(Keypair, TraceNativeProvider)> {
     setup();
+    let owner = load_keypair()?;
+    let url = env::var("RPC_URL").expect("RPC_URL is not set");
+    trace!("using RPC {url}");
+    let rpc = RpcClient::new_with_commitment(url, CommitmentConfig::finalized());
+    Ok((owner, rpc.into()))
+}
+
+#[allow(clippy::expect_fun_call)]
+pub fn load_keypair() -> anyhow::Result<Keypair> {
     let kp_file = env::var("KEYPAIR_FILE").ok();
     let owner = if let Some(kp) = kp_file {
         solana_keypair::read_keypair_file(&kp).expect(&format!(
@@ -55,8 +64,5 @@ pub fn init() -> anyhow::Result<(Keypair, TraceNativeProvider)> {
         Keypair::from_base58_string(&kp)
     };
     trace!("using solana address {}", owner.pubkey());
-    let url = env::var("RPC_URL").expect("RPC_URL is not set");
-    trace!("using RPC {url}");
-    let rpc = RpcClient::new_with_commitment(url, CommitmentConfig::finalized());
-    Ok((owner, rpc.into()))
+    Ok(owner)
 }

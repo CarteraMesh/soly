@@ -2,6 +2,7 @@ mod blockhash;
 mod counter;
 mod lookup;
 mod native;
+mod simple;
 mod trace;
 use {
     crate::{Result, SolanaRpcProvider},
@@ -15,6 +16,65 @@ use {
     solana_signature::Signature,
     std::sync::Arc,
 };
+
+/// Combined cache provider with lookup table and blockhash caching.
+///
+/// This provider combines [`LookupTableCacheProvider`] and
+/// [`BlockHashCacheProvider`] to provide comprehensive caching for Solana RPC
+/// operations. It uses `Arc` wrappers to enable efficient cloning while sharing
+/// cache state across instances.
+///
+/// # NOTE
+///
+/// This implementation is intended for demonstration and testing purposes only.
+/// It lacks production-ready features such as:
+/// - Request retries on failures
+/// - Rate limiting and throttling
+/// - Circuit breaker patterns
+/// - Comprehensive error handling
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use {
+///     moka::future::Cache,
+///     soly::rpc::{BlockHashCacheProvider, LookupTableCacheProvider, SimpleCacheProvider},
+///     std::{sync::Arc, time::Duration},
+/// };
+///
+/// let lookup_cache = Arc::new(
+///     LookupTableCacheProvider::builder()
+///         .inner(rpc_client)
+///         .lookup_cache(
+///             Cache::builder()
+///                 .time_to_live(Duration::from_secs(60))
+///                 .build(),
+///         )
+///         .negative_cache(
+///             Cache::builder()
+///                 .time_to_live(Duration::from_secs(60))
+///                 .build(),
+///         )
+///         .build(),
+/// );
+///
+/// let blockhash_cache = Arc::new(BlockHashCacheProvider::new(
+///     rpc_client,
+///     Duration::from_secs(20),
+/// ));
+///
+/// let cached_provider = SimpleCacheProvider::builder()
+///     .inner(rpc_client)
+///     .lookup_cache(lookup_cache)
+///     .blockhash_cache(blockhash_cache)
+///     .build();
+/// ```
+#[derive(Clone, bon::Builder)]
+pub struct SimpleCacheProvider<T: SolanaRpcProvider, L: SolanaRpcProvider, B: SolanaRpcProvider> {
+    inner: T,
+    lookup_cache: Arc<LookupTableCacheProvider<L>>,
+    blockhash_cache: Arc<BlockHashCacheProvider<B>>,
+}
 
 /// Provider with lookup table caching.
 ///
@@ -37,6 +97,7 @@ pub struct BlockHashCacheProvider<T: SolanaRpcProvider> {
 /// This wrapper uses `Arc` internally for efficient cloning and shared
 /// ownership. Use this when you need a type that implements the
 /// `SolanaRpcProvider` trait while working with the native Solana RPC client.
+#[derive(Clone)]
 pub struct NativeRpcWrapper(pub Arc<RpcClient>);
 
 impl From<RpcClient> for NativeRpcWrapper {
@@ -52,6 +113,7 @@ impl AsRef<RpcClient> for NativeRpcWrapper {
 }
 
 /// A thread-safe tracing wrapper around Solana's native RPC client
+#[derive(Clone)]
 pub struct TraceNativeProvider(pub Arc<RpcClient>);
 
 impl From<RpcClient> for TraceNativeProvider {
@@ -82,20 +144,21 @@ pub enum RpcMethod {
 /// **NOTE**: not meant for production use
 ///
 /// This provider is useful for testing and debugging purposes
-pub struct CounterRpcProvider<T: SolanaRpcProvider> {
+#[derive(Clone)]
+pub struct CounterRpcProvider<T: SolanaRpcProvider + Clone> {
     inner: T,
-    pub(super) counters: DashMap<RpcMethod, u64>,
+    pub(super) counters: Arc<DashMap<RpcMethod, u64>>,
 }
 
-impl<T: SolanaRpcProvider> From<T> for CounterRpcProvider<T> {
+impl<T: SolanaRpcProvider + Clone> From<T> for CounterRpcProvider<T> {
     fn from(inner: T) -> Self {
         Self::new(inner)
     }
 }
 
-impl<T: SolanaRpcProvider> CounterRpcProvider<T> {
+impl<T: SolanaRpcProvider + Clone> CounterRpcProvider<T> {
     pub fn new(inner: T) -> Self {
-        let counters = DashMap::new();
+        let counters = Arc::new(DashMap::new());
         counters.insert(RpcMethod::Blockhash, 0);
         counters.insert(RpcMethod::Lookup, 0);
         counters.insert(RpcMethod::Simulate, 0);
@@ -141,6 +204,7 @@ impl<T: SolanaRpcProvider + Send + Sync> SolanaRpcProvider for Arc<T> {
     }
 }
 
+#[derive(Clone)]
 pub struct NoopRpc;
 
 #[allow(unused_variables)]

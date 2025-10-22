@@ -6,9 +6,24 @@ use {
     solana_pubkey::Pubkey,
     solana_rpc_client_api::response::RpcPrioritizationFee,
     solana_signature::Signature,
+    std::fmt::Display,
 };
 
-impl<T: SolanaRpcProvider> CounterRpcProvider<T> {
+impl<T: SolanaRpcProvider + Clone> Display for CounterRpcProvider<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Method Counters: blockhash={} fees={} lookup={} simulate={} send={}",
+            self.get_counter(&RpcMethod::Blockhash),
+            self.get_counter(&RpcMethod::Fees),
+            self.get_counter(&RpcMethod::Lookup),
+            self.get_counter(&RpcMethod::Simulate),
+            self.get_counter(&RpcMethod::Send)
+        )
+    }
+}
+
+impl<T: SolanaRpcProvider + Clone> CounterRpcProvider<T> {
     /// Get the counter for a given method
     ///
     /// **Panics** if the method is not found
@@ -24,7 +39,7 @@ impl<T: SolanaRpcProvider> CounterRpcProvider<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: SolanaRpcProvider + Send + Sync> SolanaRpcProvider for CounterRpcProvider<T> {
+impl<T: SolanaRpcProvider + Send + Sync + Clone> SolanaRpcProvider for CounterRpcProvider<T> {
     async fn get_recent_prioritization_fees(
         &self,
         accounts: &[Pubkey],
