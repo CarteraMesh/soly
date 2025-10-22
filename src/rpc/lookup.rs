@@ -24,38 +24,53 @@ impl<T: SolanaRpcProvider> LookupTableCacheProvider<T> {
     }
 
     /// Checks if the lookup table cache is empty.
+    ///
+    /// **Note:** This method does not run pending tasks on the caches.
+    /// Results may be inaccurate.
     #[must_use]
-    pub async fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.lookup_cache.entry_count() == 0
     }
 
     /// Checks if the negative lookup table cache is empty.
+    ///
+    /// **Note:** This method does not run pending tasks on the caches.
+    /// Results may be inaccurate.
     #[must_use]
-    pub async fn is_empty_negative(&self) -> bool {
+    pub fn is_empty_negative(&self) -> bool {
         self.negative_cache.entry_count() == 0
     }
 
     #[must_use]
-    pub async fn len(&self) -> u64 {
+    /// Returns the total number of entries in the lookup table cache.
+    ///
+    /// **Note:** This method does not run pending tasks on the caches. Results
+    /// may be inaccurate.
+    pub fn len(&self) -> u64 {
         self.lookup_cache.entry_count()
     }
 
     #[must_use]
-    pub async fn len_negative(&self) -> u64 {
+    /// **Note:** This method does not run pending tasks on the caches. Results
+    /// may be inaccurate.
+    pub fn len_negative(&self) -> u64 {
         self.negative_cache.entry_count()
     }
 
     /// Returns the total number of entries in both lookup table and negative
     /// caches.
+    ///
+    /// **Note:** This method does not run pending tasks on the caches. Results
+    /// may be inaccurate.
     #[must_use]
     pub async fn total(&self) -> u64 {
-        self.len().await + self.len_negative().await
+        self.len() + self.len_negative()
     }
 
     /// Clears all lookup table and negative caches.
     pub async fn clear_all(&self) {
-        self.lookup_cache.invalidate_all();
-        self.negative_cache.invalidate_all();
+        self.clear_lookups().await;
+        self.clear_negative().await;
     }
 
     pub async fn clear_lookups(&self) {
@@ -82,9 +97,9 @@ impl<T: SolanaRpcProvider> LookupTableCacheProvider<T> {
     /// handling
     async fn try_get_lookup_account(&self, pubkey: Pubkey) -> Result<AddressLookupTableAccount> {
         let span = if enabled!(Level::TRACE) {
-            self.sync().await;
-            let cached_lookups = self.len().await;
-            let cached_negatives = self.len_negative().await;
+            self.sync().await; // to get accurate cache stats
+            let cached_lookups = self.len();
+            let cached_negatives = self.len_negative();
             info_span!("lookup-resolver", lookup = ?pubkey, cached_lookups, cached_negatives)
         } else {
             info_span!("lookup-resolver", lookup = ?pubkey)
@@ -262,11 +277,11 @@ mod tests {
                 .build(),
         );
 
-        assert!(lookup_cache.is_empty().await);
-        assert!(lookup_cache.is_empty_negative().await);
+        assert!(lookup_cache.is_empty());
+        assert!(lookup_cache.is_empty_negative());
 
-        assert_eq!(0, lookup_cache.len().await);
-        assert_eq!(0, lookup_cache.len_negative().await);
+        assert_eq!(0, lookup_cache.len());
+        assert_eq!(0, lookup_cache.len_negative());
 
         let hit1 = Keypair::new();
         let miss = Keypair::new();
@@ -289,21 +304,21 @@ mod tests {
         // Sync caches to ensure counts are accurate
         lookup_cache.sync().await;
         assert_eq!(2, results.len());
-        assert_eq!(2, lookup_cache.len().await);
-        assert_eq!(1, lookup_cache.len_negative().await);
+        assert_eq!(2, lookup_cache.len());
+        assert_eq!(1, lookup_cache.len_negative());
         assert_eq!(3, lookup_cache.total().await);
 
         sleep(Duration::from_secs(1)).await;
         lookup_cache.sync().await;
-        assert!(lookup_cache.is_empty().await);
-        assert!(lookup_cache.is_empty_negative().await);
+        assert!(lookup_cache.is_empty());
+        assert!(lookup_cache.is_empty_negative());
         let _ = lookup_cache.get_lookup_table_accounts(&query).await?;
         lookup_cache.sync().await;
         lookup_cache.clear_lookups().await;
-        assert!(lookup_cache.is_empty().await);
-        assert!(!lookup_cache.is_empty_negative().await);
+        assert!(lookup_cache.is_empty());
+        assert!(!lookup_cache.is_empty_negative());
         lookup_cache.clear_negative().await;
-        assert!(lookup_cache.is_empty_negative().await);
+        assert!(lookup_cache.is_empty_negative());
         Ok(())
     }
 }

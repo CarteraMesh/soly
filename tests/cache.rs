@@ -71,13 +71,13 @@ async fn test_lookup_cache() -> anyhow::Result<()> {
         .await?;
     assert_eq!(1, results.len());
     rpc.sync().await;
-    assert_eq!(1, rpc.len().await);
-    assert_eq!(1, rpc.len_negative().await);
+    assert_eq!(1, rpc.len());
+    assert_eq!(1, rpc.len_negative());
     info!("sleeping");
     sleep(Duration::from_millis(1500)).await;
     rpc.sync().await;
-    assert!(rpc.is_empty().await);
-    assert!(rpc.is_empty_negative().await);
+    assert!(rpc.is_empty());
+    assert!(rpc.is_empty_negative());
     let tx: TransactionBuilder = TransactionBuilder::builder()
         .instructions(random_instructions(&kp.pubkey()))
         .build()

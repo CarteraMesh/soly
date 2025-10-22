@@ -17,6 +17,9 @@ use {
 };
 
 /// Provider with lookup table caching.
+///
+/// This uses [`moka::future::Cache`] for efficient caching of lookup tables.
+/// See their documentation for more details.
 #[derive(bon::Builder)]
 pub struct LookupTableCacheProvider<T: SolanaRpcProvider> {
     inner: T,
