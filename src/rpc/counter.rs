@@ -25,10 +25,12 @@ impl<T: SolanaRpcProvider + Clone> Display for CounterRpcProvider<T> {
 
 impl<T: SolanaRpcProvider + Clone> CounterRpcProvider<T> {
     /// Get the counter for a given method
-    ///
-    /// **Panics** if the method is not found
     pub fn get_counter(&self, method: &RpcMethod) -> u64 {
-        *self.counters.get(method).unwrap()
+        match self.counters.get(method) {
+            Some(counter) => *counter,
+            None => 0, /* this should never execute, as all methods are accounted for, and the
+                        * CounterRpcProvider is initialized with all methods */
+        }
     }
 
     pub fn reset_counters(&self) {
