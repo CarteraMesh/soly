@@ -6,14 +6,28 @@ use {
     solana_pubkey::Pubkey,
     solana_rpc_client_api::response::RpcPrioritizationFee,
     solana_signature::Signature,
+    std::fmt::Display,
 };
 
-impl<T: SolanaRpcProvider> CounterRpcProvider<T> {
+impl<T: SolanaRpcProvider + Clone> Display for CounterRpcProvider<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let counters: Vec<_> = self
+            .counters
+            .iter()
+            .map(|entry| format!("{:?}={}", entry.key(), entry.value()))
+            .collect();
+        write!(f, "Method Counters: {}", counters.join(" "))
+    }
+}
+
+impl<T: SolanaRpcProvider + Clone> CounterRpcProvider<T> {
     /// Get the counter for a given method
-    ///
-    /// **Panics** if the method is not found
     pub fn get_counter(&self, method: &RpcMethod) -> u64 {
-        *self.counters.get(method).unwrap()
+        match self.counters.get(method) {
+            Some(counter) => *counter,
+            None => 0, /* this should never execute, as all methods are accounted for, and the
+                        * CounterRpcProvider is initialized with all methods */
+        }
     }
 
     pub fn reset_counters(&self) {
@@ -24,7 +38,7 @@ impl<T: SolanaRpcProvider> CounterRpcProvider<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: SolanaRpcProvider + Send + Sync> SolanaRpcProvider for CounterRpcProvider<T> {
+impl<T: SolanaRpcProvider + Send + Sync + Clone> SolanaRpcProvider for CounterRpcProvider<T> {
     async fn get_recent_prioritization_fees(
         &self,
         accounts: &[Pubkey],
