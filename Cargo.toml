@@ -23,7 +23,7 @@ bon = "3"
 borsh = { version = "1" }
 dashmap = "6"
 moka = { version = "0.12", features = ["async-lock", "sync", "future"] }
-nitrogen-instruction-builder = { git = "https://github.com/CarteraMesh/nitrogen.git", branch = "main" }
+nitrogen-instruction-builder = { version = "0.1.1" }
 solana-account = "2"
 solana-account-decoder = "2"
 solana-address-lookup-table-interface = { version = "2", features = [
