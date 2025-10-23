@@ -11,15 +11,12 @@ use {
 
 impl<T: SolanaRpcProvider + Clone> Display for CounterRpcProvider<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Method Counters: blockhash={} fees={} lookup={} simulate={} send={}",
-            self.get_counter(&RpcMethod::Blockhash),
-            self.get_counter(&RpcMethod::Fees),
-            self.get_counter(&RpcMethod::Lookup),
-            self.get_counter(&RpcMethod::Simulate),
-            self.get_counter(&RpcMethod::Send)
-        )
+        let counters: Vec<_> = self
+            .counters
+            .iter()
+            .map(|entry| format!("{:?}={}", entry.key(), entry.value()))
+            .collect();
+        write!(f, "Method Counters: {}", counters.join(" "))
     }
 }
 

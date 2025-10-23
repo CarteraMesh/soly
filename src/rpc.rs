@@ -14,7 +14,10 @@ use {
     solana_rpc_client::nonblocking::rpc_client::RpcClient,
     solana_rpc_client_api::response::{RpcPrioritizationFee, RpcSimulateTransactionResult},
     solana_signature::Signature,
-    std::sync::Arc,
+    std::{
+        fmt::{Debug, Display},
+        sync::Arc,
+    },
 };
 
 /// Combined cache provider with lookup table and blockhash caching.
@@ -155,6 +158,29 @@ pub enum RpcMethod {
     Simulate,
     Send,
     Fees,
+}
+
+impl RpcMethod {
+    fn display_debug(&self) -> &str {
+        match self {
+            RpcMethod::Blockhash => "blockhash",
+            RpcMethod::Lookup => "lookup",
+            RpcMethod::Simulate => "simulate",
+            RpcMethod::Send => "send",
+            RpcMethod::Fees => "fees",
+        }
+    }
+}
+impl Debug for RpcMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.display_debug())
+    }
+}
+
+impl Display for RpcMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.display_debug())
+    }
 }
 
 /// A testing utility which implements a simple counter for tracking RPC method
