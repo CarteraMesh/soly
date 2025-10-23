@@ -26,8 +26,9 @@ impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> CounterRpcProvider<T> {
     pub fn get_counter(&self, method: &RpcMethod) -> u64 {
         match self.counters.get(method) {
             Some(counter) => *counter,
-            None => 0, /* this should never execute, as all methods are accounted for, and the
-                        * CounterRpcProvider is initialized with all methods */
+            None => u64::MAX, /* this should never execute, as all methods are accounted for, and
+                               * the CounterRpcProvider is
+                               * initialized with all methods */
         }
     }
 

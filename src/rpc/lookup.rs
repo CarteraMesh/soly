@@ -198,7 +198,7 @@ mod tests {
 
     use {
         super::*,
-        crate::{SolanaRpcProvider, rpc::NoopRpc},
+        crate::{SolanaRpcProvider, rpc::noop::NoopRpc},
         dashmap::DashMap,
         solana_keypair::Keypair,
         solana_signer::Signer,

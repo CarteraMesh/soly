@@ -5,15 +5,13 @@ mod native;
 mod simple;
 mod trace;
 use {
-    crate::{Result, SolanaRpcProvider},
+    crate::SolanaRpcProvider,
     dashmap::DashMap,
     moka::future::Cache,
     solana_hash::Hash,
     solana_message::AddressLookupTableAccount,
     solana_pubkey::Pubkey,
     solana_rpc_client::nonblocking::rpc_client::RpcClient,
-    solana_rpc_client_api::response::{RpcPrioritizationFee, RpcSimulateTransactionResult},
-    solana_signature::Signature,
     std::{
         fmt::{Debug, Display},
         sync::Arc,
@@ -37,8 +35,6 @@ use {
 /// - `B`: Provider used by the blockhash cache (can be same as `T` via clone)
 ///
 /// This design allows you to:
-/// - Use the same provider for all operations: `SimpleCacheProvider<Client,
-///   Client, Client>`
 /// - Use different providers with different configurations (timeouts, retries,
 ///   etc.)
 /// - Mix cached and non-cached providers as needed
@@ -211,7 +207,7 @@ impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> From<T> for CounterRpcProv
     }
 }
 
-impl<T: SolanaRpcProvider + Clone + AsRef<RpcClient>> CounterRpcProvider<T> {
+impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> CounterRpcProvider<T> {
     pub fn new(inner: T) -> Self {
         let counters = Arc::new(DashMap::new());
         counters.insert(RpcMethod::Blockhash, 0);
@@ -223,41 +219,59 @@ impl<T: SolanaRpcProvider + Clone + AsRef<RpcClient>> CounterRpcProvider<T> {
     }
 }
 
-/// NoopRpc performs no RPC calls and returns dummy results. Useful for testing
-/// and debugging purposes.
-///
-/// # Note
-///
-/// The reason to pass a real [`RpcClient`] to this constructor is to allow
-/// NoopRpc to be used in other providers, e.g. [`BlockHashCacheProvider`] which
-/// requires [`AsRef<RpcClient>`].
-#[derive(Clone)]
-#[allow(dead_code)]
-pub struct NoopRpc(Arc<RpcClient>);
-
-impl Default for NoopRpc {
-    fn default() -> Self {
-        Self(Arc::new(RpcClient::new(String::from(
-            "http://localhost:8899",
-        ))))
-    }
-}
-
-impl AsRef<RpcClient> for NoopRpc {
-    fn as_ref(&self) -> &RpcClient {
-        &self.0
-    }
-}
-
-impl From<RpcClient> for NoopRpc {
-    fn from(client: RpcClient) -> Self {
-        Self(Arc::new(client))
-    }
-}
-
+#[cfg(test)]
 #[allow(unused_variables)]
 mod noop {
-    use super::*;
+    use {
+        super::*,
+        crate::Result,
+        solana_rpc_client_api::response::{RpcPrioritizationFee, RpcSimulateTransactionResult},
+        solana_signature::Signature,
+    };
+
+    /// NoopRpc is a test double that returns dummy results without making
+    /// actual RPC calls.
+    ///
+    /// While it holds a real [`RpcClient`] internally, this client is never
+    /// used for actual RPC operations. The client is only present to
+    /// satisfy type system requirements when NoopRpc is composed with other
+    /// providers.
+    ///
+    /// # Note
+    ///
+    /// This constructor accepts a real [`RpcClient`] to allow NoopRpc to be
+    /// used in other providers (e.g., [`BlockHashCacheProvider`]) which
+    /// require [`AsRef<RpcClient>`]. The client is never actually invoked.
+    #[derive(Clone)]
+    #[allow(dead_code)]
+    pub struct NoopRpc(Arc<RpcClient>);
+
+    impl Default for NoopRpc {
+        fn default() -> Self {
+            Self(Arc::new(RpcClient::new(String::from(
+                "http://localhost:8899",
+            ))))
+        }
+    }
+
+    impl AsRef<RpcClient> for NoopRpc {
+        fn as_ref(&self) -> &RpcClient {
+            &self.0
+        }
+    }
+
+    impl From<RpcClient> for NoopRpc {
+        fn from(client: RpcClient) -> Self {
+            Self(Arc::new(client))
+        }
+    }
+
+    impl From<Arc<RpcClient>> for NoopRpc {
+        fn from(client: Arc<RpcClient>) -> Self {
+            Self(client)
+        }
+    }
+
     #[async_trait::async_trait]
     impl SolanaRpcProvider for NoopRpc {
         async fn get_recent_prioritization_fees(
