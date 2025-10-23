@@ -11,24 +11,23 @@ use {
 
 impl<T: SolanaRpcProvider + Clone> Display for CounterRpcProvider<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Method Counters: blockhash={} fees={} lookup={} simulate={} send={}",
-            self.get_counter(&RpcMethod::Blockhash),
-            self.get_counter(&RpcMethod::Fees),
-            self.get_counter(&RpcMethod::Lookup),
-            self.get_counter(&RpcMethod::Simulate),
-            self.get_counter(&RpcMethod::Send)
-        )
+        let counters: Vec<_> = self
+            .counters
+            .iter()
+            .map(|entry| format!("{:?}={}", entry.key(), entry.value()))
+            .collect();
+        write!(f, "Method Counters: {}", counters.join(" "))
     }
 }
 
 impl<T: SolanaRpcProvider + Clone> CounterRpcProvider<T> {
     /// Get the counter for a given method
-    ///
-    /// **Panics** if the method is not found
     pub fn get_counter(&self, method: &RpcMethod) -> u64 {
-        *self.counters.get(method).unwrap()
+        match self.counters.get(method) {
+            Some(counter) => *counter,
+            None => 0, /* this should never execute, as all methods are accounted for, and the
+                        * CounterRpcProvider is initialized with all methods */
+        }
     }
 
     pub fn reset_counters(&self) {
