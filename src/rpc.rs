@@ -109,6 +109,7 @@ pub struct LookupTableCacheProvider<T: SolanaRpcProvider> {
     negative_cache: Cache<Pubkey, ()>,
 }
 
+#[derive(bon::Builder)]
 pub struct BlockHashCacheProvider<T: SolanaRpcProvider> {
     inner: T,
     blockhash: Cache<(), Hash>,
