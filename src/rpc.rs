@@ -98,6 +98,14 @@ pub struct SimpleCacheProvider<
     blockhash_cache: Arc<BlockHashCacheProvider<B>>,
 }
 
+impl<T: SolanaRpcProvider + AsRef<RpcClient>, L: SolanaRpcProvider, B: SolanaRpcProvider>
+    AsRef<RpcClient> for SimpleCacheProvider<T, L, B>
+{
+    fn as_ref(&self) -> &RpcClient {
+        self.inner.as_ref()
+    }
+}
+
 /// Provider with lookup table caching.
 ///
 /// This uses [`moka::future::Cache`] for efficient caching of lookup tables.

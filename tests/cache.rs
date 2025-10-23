@@ -185,5 +185,6 @@ async fn test_simple_cache() -> anyhow::Result<()> {
     let tx: TransactionBuilder = spl_memo::build_memo(MEMO_PKG.as_bytes(), &[&kp.pubkey()]).into();
     let sig = tx.send(&rpc, &kp.pubkey(), &[&kp]).await;
     info!(sig = ?sig);
+    let _ = rpc.as_ref(); // coverage
     Ok(())
 }
