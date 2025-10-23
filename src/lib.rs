@@ -18,6 +18,7 @@ pub use {
     error::*,
     fee::CalcFeeResult,
     lookup::*,
+    moka::{self, future::Cache},
     nitrogen_instruction_builder::*,
     rpc::*,
     transaction::*,
