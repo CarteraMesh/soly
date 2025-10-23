@@ -92,7 +92,11 @@ use {
 ///     .build();
 /// ```
 #[derive(Clone, bon::Builder)]
-pub struct SimpleCacheProvider<T: SolanaRpcProvider, L: SolanaRpcProvider, B: SolanaRpcProvider> {
+pub struct SimpleCacheProvider<
+    T: SolanaRpcProvider + AsRef<RpcClient>,
+    L: SolanaRpcProvider,
+    B: SolanaRpcProvider,
+> {
     inner: T,
     lookup_cache: Arc<LookupTableCacheProvider<L>>,
     blockhash_cache: Arc<BlockHashCacheProvider<B>>,
@@ -190,18 +194,24 @@ impl Display for RpcMethod {
 ///
 /// This provider is useful for testing and debugging purposes
 #[derive(Clone)]
-pub struct CounterRpcProvider<T: SolanaRpcProvider + Clone> {
+pub struct CounterRpcProvider<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> {
     inner: T,
     pub(super) counters: Arc<DashMap<RpcMethod, u64>>,
 }
 
-impl<T: SolanaRpcProvider + Clone> From<T> for CounterRpcProvider<T> {
+impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> AsRef<RpcClient> for CounterRpcProvider<T> {
+    fn as_ref(&self) -> &RpcClient {
+        self.inner.as_ref()
+    }
+}
+
+impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> From<T> for CounterRpcProvider<T> {
     fn from(inner: T) -> Self {
         Self::new(inner)
     }
 }
 
-impl<T: SolanaRpcProvider + Clone> CounterRpcProvider<T> {
+impl<T: SolanaRpcProvider + Clone + AsRef<RpcClient>> CounterRpcProvider<T> {
     pub fn new(inner: T) -> Self {
         let counters = Arc::new(DashMap::new());
         counters.insert(RpcMethod::Blockhash, 0);
@@ -213,8 +223,37 @@ impl<T: SolanaRpcProvider + Clone> CounterRpcProvider<T> {
     }
 }
 
+/// NoopRpc performs no RPC calls and returns dummy results. Useful for testing
+/// and debugging purposes.
+///
+/// # Note
+///
+/// The reason to pass a real [`RpcClient`] to this constructor is to allow
+/// NoopRpc to be used in other providers, e.g. [`BlockHashCacheProvider`] which
+/// requires [`AsRef<RpcClient>`].
 #[derive(Clone)]
-pub struct NoopRpc;
+#[allow(dead_code)]
+pub struct NoopRpc(Arc<RpcClient>);
+
+impl Default for NoopRpc {
+    fn default() -> Self {
+        Self(Arc::new(RpcClient::new(String::from(
+            "http://localhost:8899",
+        ))))
+    }
+}
+
+impl AsRef<RpcClient> for NoopRpc {
+    fn as_ref(&self) -> &RpcClient {
+        &self.0
+    }
+}
+
+impl From<RpcClient> for NoopRpc {
+    fn from(client: RpcClient) -> Self {
+        Self(Arc::new(client))
+    }
+}
 
 #[allow(unused_variables)]
 mod noop {

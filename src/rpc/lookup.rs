@@ -208,7 +208,7 @@ mod tests {
 
     #[derive(Clone)]
     struct MockRpcProvider {
-        inner: Arc<NoopRpc>,
+        inner: NoopRpc,
         lookups: Arc<DashMap<Pubkey, AddressLookupTableAccount>>,
     }
 
@@ -265,7 +265,7 @@ mod tests {
     #[test_log::test]
     async fn test_lookup_cache() -> anyhow::Result<()> {
         let mock = MockRpcProvider {
-            inner: Arc::new(NoopRpc),
+            inner: NoopRpc::default(),
             lookups: Arc::new(DashMap::new()),
         };
 

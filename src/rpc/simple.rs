@@ -3,13 +3,14 @@ use {
     solana_hash::Hash,
     solana_message::AddressLookupTableAccount,
     solana_pubkey::Pubkey,
+    solana_rpc_client::nonblocking::rpc_client::RpcClient,
     solana_rpc_client_api::response::RpcPrioritizationFee,
     solana_signature::Signature,
 };
 
 #[async_trait::async_trait]
 impl<
-    T: SolanaRpcProvider + Send + Sync,
+    T: SolanaRpcProvider + AsRef<RpcClient> + Send + Sync,
     L: SolanaRpcProvider + Send + Sync,
     B: SolanaRpcProvider + Send + Sync,
 > SolanaRpcProvider for SimpleCacheProvider<T, L, B>
