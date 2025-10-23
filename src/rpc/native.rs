@@ -60,14 +60,42 @@ impl SolanaRpcProvider for NativeRpcWrapper {
     async fn send_and_confirm_transaction(
         &self,
         tx: &solana_transaction::versioned::VersionedTransaction,
+        config: Option<solana_rpc_client_api::config::RpcSendTransactionConfig>,
     ) -> Result<Signature> {
         if tracing::enabled!(tracing::Level::TRACE) {
             let transaction_base64 = BASE64_STANDARD.encode(bincode::serialize(&tx)?);
             trace!(send_tx =? transaction_base64);
         }
-        self.0
-            .send_and_confirm_transaction(tx)
-            .await
-            .map_err(|e| Error::SolanaRpcError(format!("failed to send transaction: {e}")))
+        match config {
+            None => self
+                .0
+                .send_and_confirm_transaction(tx)
+                .await
+                .map_err(|e| Error::SolanaRpcError(format!("failed to send transaction: {e}"))),
+            Some(config) => {
+                let result = self
+                    .0
+                    .send_transaction_with_config(tx, config)
+                    .await
+                    .map_err(|e| {
+                        Error::SolanaRpcError(format!("failed to send transaction: {e}"))
+                    })?;
+
+                match self.0.confirm_transaction(&result).await {
+                    Err(e) => Err(Error::SolanaRpcError(format!(
+                        "failed to confirm transaction: {result} Error:{e}"
+                    ))),
+                    Ok(t) => {
+                        if t {
+                            Ok(result)
+                        } else {
+                            Err(Error::SolanaRpcError(format!(
+                                "Transaction is not confirmed: {result}"
+                            )))
+                        }
+                    }
+                }
+            }
+        }
     }
 }

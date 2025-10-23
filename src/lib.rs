@@ -71,6 +71,7 @@ pub trait SolanaRpcProvider {
     async fn send_and_confirm_transaction(
         &self,
         tx: &solana_transaction::versioned::VersionedTransaction,
+        config: Option<solana_rpc_client_api::config::RpcSendTransactionConfig>,
     ) -> Result<Signature>;
 }
 
