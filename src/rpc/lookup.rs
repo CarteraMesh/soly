@@ -187,8 +187,9 @@ impl<T: SolanaRpcProvider + Send + Sync> SolanaRpcProvider for LookupTableCacheP
     async fn send_and_confirm_transaction(
         &self,
         tx: &solana_transaction::versioned::VersionedTransaction,
+        config: Option<solana_rpc_client_api::config::RpcSendTransactionConfig>,
     ) -> Result<Signature> {
-        self.inner.send_and_confirm_transaction(tx).await
+        self.inner.send_and_confirm_transaction(tx, config).await
     }
 }
 
@@ -254,8 +255,9 @@ mod tests {
         async fn send_and_confirm_transaction(
             &self,
             tx: &solana_transaction::versioned::VersionedTransaction,
+            config: Option<solana_rpc_client_api::config::RpcSendTransactionConfig>,
         ) -> Result<Signature> {
-            self.inner.send_and_confirm_transaction(tx).await
+            self.inner.send_and_confirm_transaction(tx, config).await
         }
     }
 

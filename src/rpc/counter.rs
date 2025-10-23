@@ -75,8 +75,9 @@ impl<T: SolanaRpcProvider + Send + Sync + Clone> SolanaRpcProvider for CounterRp
     async fn send_and_confirm_transaction(
         &self,
         tx: &solana_transaction::versioned::VersionedTransaction,
+        config: Option<solana_rpc_client_api::config::RpcSendTransactionConfig>,
     ) -> Result<Signature> {
         *self.counters.get_mut(&RpcMethod::Send).unwrap() += 1;
-        self.inner.send_and_confirm_transaction(tx).await
+        self.inner.send_and_confirm_transaction(tx, config).await
     }
 }

@@ -110,7 +110,7 @@ impl TransactionBuilder {
             ..Default::default()
         })
         .await?;
-        rpc.send_and_confirm_transaction(&tx).await
+        rpc.send_and_confirm_transaction(&tx, None).await
     }
 
     pub async fn unsigned_tx<T: SolanaRpcProvider>(
