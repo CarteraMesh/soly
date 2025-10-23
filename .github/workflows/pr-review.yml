@@ -44,8 +44,12 @@ jobs:
                - Check API documentation accuracy
 
             3. **Documentation**
-               - Do not inform me to add documentation unless there is a panic or unexpected behavior that requires user attention
+               - Do **not** inform me to add documentation unless there is a panic or unexpected behavior that requires user attention
                - Correct the spelling and grammar of existing documentation only
+
+            4. **Breaking API Changes**
+               - Do **not** comment on breaking API changes, i have another tool for this.
+
 
             Provide detailed feedback using inline comments for specific issues.
             Use top-level comments for general observations or praise, but do not praise individual lines of code.
