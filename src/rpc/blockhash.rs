@@ -74,7 +74,7 @@ mod tests {
         crate::{
             SolanaRpcProvider,
             TransactionBuilder,
-            rpc::{CounterRpcProvider, NoopRpc},
+            rpc::{CounterRpcProvider, noop::NoopRpc},
         },
         solana_keypair::Keypair,
         solana_rpc_client_api::config::RpcSimulateTransactionConfig,
@@ -84,7 +84,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_blockhash_cache_provider() -> anyhow::Result<()> {
-        let counter = CounterRpcProvider::new(NoopRpc);
+        let noop: NoopRpc = NoopRpc::default();
+        let counter = CounterRpcProvider::new(noop);
         let hash_cache = BlockHashCacheProvider::new(counter.clone(), Duration::from_secs(1));
         hash_cache.get_latest_blockhash().await?;
         {
