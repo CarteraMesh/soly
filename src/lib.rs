@@ -11,6 +11,7 @@ use {
     solana_instruction::Instruction,
     solana_message::AddressLookupTableAccount,
     solana_pubkey::Pubkey,
+    solana_rpc_client::nonblocking::rpc_client::RpcClient,
     solana_rpc_client_api::response::RpcPrioritizationFee,
     solana_signature::Signature,
 };
@@ -54,7 +55,7 @@ impl<T: BorshSerialize> InstructionBuilderExt for InstructionBuilder<T> {
 /// let provider: NativeRpcWrapper = rpc.into();
 /// ```
 #[async_trait::async_trait]
-pub trait SolanaRpcProvider {
+pub trait SolanaRpcProvider: Send + Sync {
     async fn get_recent_prioritization_fees(
         &self,
         accounts: &[Pubkey],
@@ -75,6 +76,9 @@ pub trait SolanaRpcProvider {
         config: Option<solana_rpc_client_api::config::RpcSendTransactionConfig>,
     ) -> Result<Signature>;
 }
+
+/// Provides access to native [`RpcClient`] for composability
+pub trait SolanaRpcProviderNative: SolanaRpcProvider + AsRef<RpcClient> {}
 
 impl From<Instruction> for TransactionBuilder {
     fn from(instruction: Instruction) -> Self {

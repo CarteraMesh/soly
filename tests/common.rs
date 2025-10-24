@@ -5,7 +5,7 @@ use {
     solana_pubkey::{Pubkey, pubkey},
     solana_rpc_client::nonblocking::rpc_client::RpcClient,
     solana_signer::Signer,
-    soly::TraceNativeProvider,
+    soly::TraceRpcNativeProvider,
     std::{env, sync::Once},
     tracing::trace,
     tracing_subscriber::{EnvFilter, fmt::format::FmtSpan},
@@ -42,7 +42,7 @@ pub fn setup() {
 }
 
 #[allow(clippy::expect_fun_call)]
-pub fn init() -> anyhow::Result<(Keypair, TraceNativeProvider)> {
+pub fn init() -> anyhow::Result<(Keypair, TraceRpcNativeProvider)> {
     setup();
     let owner = load_keypair()?;
     let url = env::var("RPC_URL").expect("RPC_URL is not set");

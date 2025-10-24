@@ -5,7 +5,7 @@ mod native;
 mod simple;
 mod trace;
 use {
-    crate::SolanaRpcProvider,
+    crate::{SolanaRpcProvider, SolanaRpcProviderNative},
     dashmap::DashMap,
     moka::future::Cache,
     solana_hash::Hash,
@@ -89,7 +89,7 @@ use {
 /// ```
 #[derive(Clone, bon::Builder)]
 pub struct SimpleCacheProvider<
-    T: SolanaRpcProvider + AsRef<RpcClient>,
+    T: SolanaRpcProviderNative,
     L: SolanaRpcProvider,
     B: SolanaRpcProvider,
 > {
@@ -98,8 +98,13 @@ pub struct SimpleCacheProvider<
     blockhash_cache: Arc<BlockHashCacheProvider<B>>,
 }
 
-impl<T: SolanaRpcProvider + AsRef<RpcClient>, L: SolanaRpcProvider, B: SolanaRpcProvider>
-    AsRef<RpcClient> for SimpleCacheProvider<T, L, B>
+impl<T: SolanaRpcProviderNative, L: SolanaRpcProvider, B: SolanaRpcProvider> SolanaRpcProviderNative
+    for SimpleCacheProvider<T, L, B>
+{
+}
+
+impl<T: SolanaRpcProviderNative, L: SolanaRpcProvider, B: SolanaRpcProvider> AsRef<RpcClient>
+    for SimpleCacheProvider<T, L, B>
 {
     fn as_ref(&self) -> &RpcClient {
         self.inner.as_ref()
@@ -130,7 +135,7 @@ pub struct BlockHashCacheProvider<T: SolanaRpcProvider> {
 /// `SolanaRpcProvider` trait while working with the native Solana RPC client.
 #[derive(Clone)]
 pub struct NativeRpcWrapper(pub Arc<RpcClient>);
-
+impl SolanaRpcProviderNative for NativeRpcWrapper {}
 impl From<RpcClient> for NativeRpcWrapper {
     fn from(client: RpcClient) -> Self {
         Self(Arc::new(client))
@@ -145,15 +150,15 @@ impl AsRef<RpcClient> for NativeRpcWrapper {
 
 /// A thread-safe tracing wrapper around Solana's native RPC client
 #[derive(Clone)]
-pub struct TraceNativeProvider(pub Arc<RpcClient>);
-
-impl From<RpcClient> for TraceNativeProvider {
+pub struct TraceRpcNativeProvider(pub Arc<RpcClient>);
+impl SolanaRpcProviderNative for TraceRpcNativeProvider {}
+impl From<RpcClient> for TraceRpcNativeProvider {
     fn from(client: RpcClient) -> Self {
         Self(Arc::new(client))
     }
 }
 
-impl AsRef<RpcClient> for TraceNativeProvider {
+impl AsRef<RpcClient> for TraceRpcNativeProvider {
     fn as_ref(&self) -> &RpcClient {
         &self.0
     }
@@ -199,24 +204,26 @@ impl Display for RpcMethod {
 ///
 /// This provider is useful for testing and debugging purposes
 #[derive(Clone)]
-pub struct CounterRpcProvider<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> {
+pub struct CounterRpcProvider<T: SolanaRpcProviderNative + Clone> {
     inner: T,
     pub(super) counters: Arc<DashMap<RpcMethod, u64>>,
 }
 
-impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> AsRef<RpcClient> for CounterRpcProvider<T> {
+impl<T: SolanaRpcProviderNative + Clone> SolanaRpcProviderNative for CounterRpcProvider<T> {}
+
+impl<T: SolanaRpcProviderNative + Clone> AsRef<RpcClient> for CounterRpcProvider<T> {
     fn as_ref(&self) -> &RpcClient {
         self.inner.as_ref()
     }
 }
 
-impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> From<T> for CounterRpcProvider<T> {
+impl<T: SolanaRpcProviderNative + Clone> From<T> for CounterRpcProvider<T> {
     fn from(inner: T) -> Self {
         Self::new(inner)
     }
 }
 
-impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> CounterRpcProvider<T> {
+impl<T: SolanaRpcProviderNative + Clone> CounterRpcProvider<T> {
     pub fn new(inner: T) -> Self {
         let counters = Arc::new(DashMap::new());
         counters.insert(RpcMethod::Blockhash, 0);
@@ -233,7 +240,7 @@ impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> CounterRpcProvider<T> {
 mod noop {
     use {
         super::*,
-        crate::Result,
+        crate::{Result, SolanaRpcProviderNative},
         solana_rpc_client_api::response::{RpcPrioritizationFee, RpcSimulateTransactionResult},
         solana_signature::Signature,
     };
@@ -254,6 +261,18 @@ mod noop {
     #[derive(Clone)]
     #[allow(dead_code)]
     pub struct NoopRpc(Arc<RpcClient>);
+
+    fn accept_asref<T: AsRef<RpcClient> + Send + Sync>(rpc: &T) {
+        // type checking
+    }
+
+    fn accept_native<T: SolanaRpcProviderNative>(rpc: &T) {
+        // type checking
+    }
+
+    fn accept_provider<T: SolanaRpcProvider>(rpc: &T) {
+        // type checking
+    }
 
     impl Default for NoopRpc {
         fn default() -> Self {
@@ -280,6 +299,8 @@ mod noop {
             Self(client)
         }
     }
+
+    impl SolanaRpcProviderNative for NoopRpc {}
 
     #[async_trait::async_trait]
     impl SolanaRpcProvider for NoopRpc {
@@ -325,5 +346,13 @@ mod noop {
         ) -> Result<Signature> {
             Ok(Signature::default())
         }
+    }
+
+    #[test]
+    fn test_traits() {
+        let rpc = NoopRpc::default();
+        accept_provider(&rpc);
+        accept_native(&rpc);
+        accept_asref(&rpc);
     }
 }

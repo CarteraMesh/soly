@@ -1,5 +1,5 @@
 use {
-    crate::{Error, Result, SolanaRpcProvider, TraceNativeProvider},
+    crate::{Error, Result, SolanaRpcProvider, TraceRpcNativeProvider},
     base64::prelude::*,
     solana_hash::Hash,
     solana_message::AddressLookupTableAccount,
@@ -10,7 +10,7 @@ use {
 };
 
 #[async_trait::async_trait]
-impl SolanaRpcProvider for TraceNativeProvider {
+impl SolanaRpcProvider for TraceRpcNativeProvider {
     #[tracing::instrument(skip_all, level = tracing::Level::INFO)]
     async fn get_recent_prioritization_fees(
         &self,
