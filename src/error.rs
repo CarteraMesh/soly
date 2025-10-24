@@ -49,4 +49,7 @@ pub enum Error {
 
     #[error("Lookup table miss")]
     LookupTableMiss,
+
+    #[error("{0}")]
+    CustomError(String),
 }
