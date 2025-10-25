@@ -198,7 +198,10 @@ mod tests {
 
     use {
         super::*,
-        crate::{SolanaRpcProvider, rpc::noop::NoopRpc},
+        crate::{
+            SolanaRpcProvider,
+            rpc::noop::{NoopRpc, NoopRpcNative},
+        },
         dashmap::DashMap,
         solana_keypair::Keypair,
         solana_signer::Signer,
@@ -208,7 +211,7 @@ mod tests {
 
     #[derive(Clone)]
     struct MockRpcProvider {
-        inner: NoopRpc,
+        inner: NoopRpcNative,
         lookups: Arc<DashMap<Pubkey, AddressLookupTableAccount>>,
     }
 

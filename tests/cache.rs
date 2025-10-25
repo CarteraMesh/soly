@@ -4,6 +4,7 @@ use {
     futures::future::try_join_all,
     moka::future::Cache,
     solana_keypair::Keypair,
+    solana_rpc_client::nonblocking::rpc_client::RpcClient,
     solana_rpc_client_api::config::RpcSimulateTransactionConfig,
     solana_signer::Signer,
     soly::{
@@ -185,6 +186,10 @@ async fn test_simple_cache() -> anyhow::Result<()> {
     let tx: TransactionBuilder = spl_memo::build_memo(MEMO_PKG.as_bytes(), &[&kp.pubkey()]).into();
     let sig = tx.send(&rpc, &kp.pubkey(), &[&kp]).await;
     info!(sig = ?sig);
-    let _ = rpc.as_ref(); // coverage
+    accept_rpc_client_ref(&rpc);
     Ok(())
+}
+
+fn accept_rpc_client_ref<T: AsRef<RpcClient>>(rpc: &T) {
+    let _rpc: &RpcClient = rpc.as_ref(); // coverage
 }

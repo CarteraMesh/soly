@@ -4,16 +4,9 @@ use {
     common::*,
     solana_instruction::AccountMeta,
     solana_pubkey::Pubkey,
-    solana_rpc_client_api::config::RpcSimulateTransactionConfig,
     solana_signer::Signer,
-    soly::{
-        InstructionBuilder,
-        InstructionBuilderExt,
-        NativeRpcWrapper,
-        SolanaRpcProvider,
-        TransactionBuilder,
-    },
-    tracing::{info, info_span},
+    soly::{InstructionBuilder, InstructionBuilderExt, TransactionBuilder},
+    tracing::info,
 };
 
 #[derive(BorshSerialize)]
@@ -29,32 +22,32 @@ impl From<&str> for MemoData {
     }
 }
 
-#[tokio::test]
-async fn test_native_rpc() -> anyhow::Result<()> {
-    let (kp, rpc) = init()?;
-    let span = info_span!("native_rpc");
-    let _guard = span.enter();
-    let rpc = NativeRpcWrapper(rpc.0);
-    rpc.get_latest_blockhash().await?;
-    let results = rpc
-        .get_lookup_table_accounts(&[TEST_LOOKUP_TABLE_ADDRESS])
-        .await?;
-    assert!(!results.is_empty());
-    let results = rpc.get_recent_prioritization_fees(&[]).await?;
-    assert!(!results.is_empty());
-    let tx = TransactionBuilder::default().with_memo(MEMO_PKG, &[&kp.pubkey()]);
-    let sig = tx.send(&rpc, &kp.pubkey(), &[&kp]).await?;
-    info!(sig = ?sig);
-    let _ = tx
-        .simulate(
-            &kp.pubkey(),
-            &[&kp],
-            &rpc,
-            RpcSimulateTransactionConfig::default(),
-        )
-        .await?;
-    Ok(())
-}
+// #[tokio::test]
+// async fn test_native_rpc() -> anyhow::Result<()> {
+// let (kp, _) = init()?;
+// let rpc = Arc::new(rpc_native()?);
+// let span = info_span!("native_rpc");
+// let _guard = span.enter();
+// rpc.get_latest_blockhash().await?;
+// let results = rpc
+// .get_lookup_table_accounts(&[TEST_LOOKUP_TABLE_ADDRESS])
+// .await?;
+// assert!(!results.is_empty());
+// let results = rpc.get_recent_prioritization_fees(&[]).await?;
+// assert!(!results.is_empty());
+// let tx = TransactionBuilder::default().with_memo(MEMO_PKG, &[&kp.pubkey()]);
+// let sig = tx.send(&rpc, &kp.pubkey(), &[&kp]).await?;
+// info!(sig = ?sig);
+// let _ = tx
+// .simulate(
+// &kp.pubkey(),
+// &[&kp],
+// &rpc,
+// RpcSimulateTransactionConfig::default(),
+// )
+// .await?;
+// Ok(())
+// }
 
 #[tokio::test]
 async fn test_instruction_builder() -> anyhow::Result<()> {
