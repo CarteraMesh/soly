@@ -1,6 +1,6 @@
 use {
     super::{Error, Result, TransactionBuilder},
-    crate::SolanaRpcProvider,
+    crate::TransactionRpcProvider,
     solana_compute_budget_interface::ComputeBudgetInstruction,
     solana_pubkey::Pubkey,
     solana_rpc_client_api::{
@@ -98,7 +98,7 @@ impl TransactionBuilder {
 }
 
 impl TransactionBuilder {
-    pub async fn get_recent_prioritization_fees<T: SolanaRpcProvider>(
+    pub async fn get_recent_prioritization_fees<T: TransactionRpcProvider>(
         rpc: &T,
         accounts: &[Pubkey],
     ) -> Result<Vec<RpcPrioritizationFee>> {
@@ -109,7 +109,7 @@ impl TransactionBuilder {
             })
     }
 
-    pub async fn calc_fee<T: SolanaRpcProvider>(
+    pub async fn calc_fee<T: TransactionRpcProvider>(
         &self,
         payer: &Pubkey,
         rpc: &T,
@@ -189,7 +189,7 @@ impl TransactionBuilder {
     ///
     /// Reference: <https://solana.com/developers/guides/advanced/how-to-use-priority-fees>
     #[tracing::instrument(skip(rpc, payer, accounts), level = tracing::Level::DEBUG)]
-    pub async fn with_priority_fees<T: SolanaRpcProvider>(
+    pub async fn with_priority_fees<T: TransactionRpcProvider>(
         self,
         payer: &Pubkey,
         rpc: &T,

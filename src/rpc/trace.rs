@@ -1,5 +1,5 @@
 use {
-    crate::{Result, SolanaRpcProvider, TraceRpcNativeProvider},
+    crate::{Result, TraceTransactionProvider, TransactionRpcProvider},
     base64::prelude::*,
     solana_hash::Hash,
     solana_message::AddressLookupTableAccount,
@@ -11,8 +11,8 @@ use {
 };
 
 #[async_trait::async_trait]
-impl<T: SolanaRpcProvider + AsRef<RpcClient> + Send + Sync + Clone> SolanaRpcProvider
-    for TraceRpcNativeProvider<T>
+impl<T: TransactionRpcProvider + AsRef<RpcClient> + Send + Sync + Clone> TransactionRpcProvider
+    for TraceTransactionProvider<T>
 {
     #[tracing::instrument(skip_all, level = tracing::Level::INFO)]
     async fn get_recent_prioritization_fees(

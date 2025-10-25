@@ -5,7 +5,7 @@ use {
     solana_pubkey::{Pubkey, pubkey},
     solana_rpc_client::nonblocking::rpc_client::RpcClient,
     solana_signer::Signer,
-    soly::TraceRpcTransactionProvider,
+    soly::TraceTransactionArcProvider,
     std::{
         env,
         sync::{Arc, Once},
@@ -44,10 +44,10 @@ pub fn setup() {
     });
 }
 
-pub fn init() -> anyhow::Result<(Keypair, TraceRpcTransactionProvider)> {
+pub fn init() -> anyhow::Result<(Keypair, TraceTransactionArcProvider)> {
     setup();
     let owner = load_keypair()?;
-    let rpc: TraceRpcTransactionProvider = Arc::new(rpc_native()?).into();
+    let rpc: TraceTransactionArcProvider = Arc::new(rpc_native()?).into();
     Ok((owner, rpc))
 }
 

@@ -11,9 +11,9 @@ use {
         BlockHashCacheProvider,
         CounterRpcProvider,
         LookupTableCacheProvider,
-        SimpleCacheProvider,
-        SolanaRpcProvider,
+        SimpleCacheTransactionProvider,
         TransactionBuilder,
+        TransactionRpcProvider,
     },
     std::{sync::Arc, time::Duration},
     tokio::time::sleep,
@@ -124,7 +124,7 @@ async fn test_simple_cache() -> anyhow::Result<()> {
         )
         .build();
     let blockhash_rpc = BlockHashCacheProvider::new(counter_rpc.clone(), Duration::from_secs(20));
-    let rpc = SimpleCacheProvider::builder()
+    let rpc = SimpleCacheTransactionProvider::builder()
         .inner(counter_rpc.clone())
         .blockhash_cache(Arc::new(blockhash_rpc))
         .lookup_cache(Arc::new(lookup_rpc))

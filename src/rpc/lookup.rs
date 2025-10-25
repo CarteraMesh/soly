@@ -1,6 +1,6 @@
 use {
     super::LookupTableCacheProvider,
-    crate::{Result, SolanaRpcProvider},
+    crate::{Result, TransactionRpcProvider},
     moka::future::Cache,
     solana_hash::Hash,
     solana_message::AddressLookupTableAccount,
@@ -10,7 +10,7 @@ use {
     tracing::{Level, enabled, event, info_span},
 };
 
-impl<T: SolanaRpcProvider> LookupTableCacheProvider<T> {
+impl<T: TransactionRpcProvider> LookupTableCacheProvider<T> {
     pub fn new(
         client: T,
         lookup_cache: Cache<Pubkey, AddressLookupTableAccount>,
@@ -92,7 +92,7 @@ impl<T: SolanaRpcProvider> LookupTableCacheProvider<T> {
     }
 }
 
-impl<T: SolanaRpcProvider> LookupTableCacheProvider<T> {
+impl<T: TransactionRpcProvider> LookupTableCacheProvider<T> {
     /// Helper function to fetch a single lookup table account with proper error
     /// handling
     async fn try_get_lookup_account(&self, pubkey: Pubkey) -> Result<AddressLookupTableAccount> {
@@ -140,7 +140,9 @@ impl<T: SolanaRpcProvider> LookupTableCacheProvider<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: SolanaRpcProvider + Send + Sync> SolanaRpcProvider for LookupTableCacheProvider<T> {
+impl<T: TransactionRpcProvider + Send + Sync> TransactionRpcProvider
+    for LookupTableCacheProvider<T>
+{
     async fn get_recent_prioritization_fees(
         &self,
         accounts: &[Pubkey],
@@ -199,7 +201,7 @@ mod tests {
     use {
         super::*,
         crate::{
-            SolanaRpcProvider,
+            TransactionRpcProvider,
             rpc::noop::{NoopRpc, NoopRpcNative},
         },
         dashmap::DashMap,
@@ -221,7 +223,7 @@ mod tests {
         }
     }
     #[async_trait::async_trait]
-    impl SolanaRpcProvider for MockRpcProvider {
+    impl TransactionRpcProvider for MockRpcProvider {
         async fn get_recent_prioritization_fees(
             &self,
             accounts: &[Pubkey],

@@ -1,5 +1,5 @@
 use {
-    crate::{Error, Result, SolanaRpcProvider},
+    crate::{Error, Result, TransactionRpcProvider},
     base64::prelude::*,
     solana_hash::Hash,
     solana_message::AddressLookupTableAccount,
@@ -11,7 +11,7 @@ use {
 };
 
 #[async_trait::async_trait]
-impl SolanaRpcProvider for std::sync::Arc<RpcClient> {
+impl TransactionRpcProvider for std::sync::Arc<RpcClient> {
     async fn get_recent_prioritization_fees(
         &self,
         accounts: &[Pubkey],

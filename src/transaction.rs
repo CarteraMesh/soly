@@ -1,6 +1,6 @@
 use {
     super::{InstructionBuilder, IntoInstruction, Result},
-    crate::SolanaRpcProvider,
+    crate::TransactionRpcProvider,
     borsh::BorshSerialize,
     solana_hash::Hash,
     solana_instruction::Instruction,
@@ -38,11 +38,11 @@ impl Debug for TransactionBuilder {
 }
 
 impl TransactionBuilder {
-    async fn get_latest_blockhash<T: SolanaRpcProvider>(rpc: &T) -> Result<Hash> {
+    async fn get_latest_blockhash<T: TransactionRpcProvider>(rpc: &T) -> Result<Hash> {
         rpc.get_latest_blockhash().await
     }
 
-    pub async fn create_message<T: SolanaRpcProvider>(
+    pub async fn create_message<T: TransactionRpcProvider>(
         &self,
         payer: &Pubkey,
         rpc: &T,
@@ -74,8 +74,8 @@ impl TransactionBuilder {
     }
 
     /// Simulates the [`VersionedTransaction`] using
-    /// [`SolanaRpcProvider::simulate_transaction`].
-    pub async fn simulate<S: Signers + ?Sized, T: SolanaRpcProvider>(
+    /// [`TransactionRpcProvider::simulate_transaction`].
+    pub async fn simulate<S: Signers + ?Sized, T: TransactionRpcProvider>(
         &self,
         payer: &Pubkey,
         signers: &S,
@@ -86,7 +86,7 @@ impl TransactionBuilder {
         self.simulate_internal(rpc, &tx, config).await
     }
 
-    pub(super) async fn simulate_internal<T: SolanaRpcProvider>(
+    pub(super) async fn simulate_internal<T: TransactionRpcProvider>(
         &self,
         rpc: &T,
         tx: &VersionedTransaction,
@@ -96,9 +96,9 @@ impl TransactionBuilder {
     }
 
     /// Simulates, signs, and sends the transaction using
-    /// [`SolanaRpcProvider::send_and_confirm_transaction`].
+    /// [`TransactionRpcProvider::send_and_confirm_transaction`].
     #[tracing::instrument(skip(rpc, signers), level = tracing::Level::INFO)]
-    pub async fn send<S: Signers + ?Sized, T: SolanaRpcProvider>(
+    pub async fn send<S: Signers + ?Sized, T: TransactionRpcProvider>(
         &self,
         rpc: &T,
         payer: &Pubkey,
@@ -113,7 +113,7 @@ impl TransactionBuilder {
         rpc.send_and_confirm_transaction(&tx, None).await
     }
 
-    pub async fn unsigned_tx<T: SolanaRpcProvider>(
+    pub async fn unsigned_tx<T: TransactionRpcProvider>(
         &self,
         payer: &Pubkey,
         rpc: &T,

@@ -1,6 +1,6 @@
 use {
     super::BlockHashCacheProvider,
-    crate::{Result, SolanaRpcProvider},
+    crate::{Result, TransactionRpcProvider},
     moka::future::Cache,
     solana_hash::Hash,
     solana_message::AddressLookupTableAccount,
@@ -11,7 +11,7 @@ use {
     tracing::{Level, event},
 };
 
-impl<T: SolanaRpcProvider> BlockHashCacheProvider<T> {
+impl<T: TransactionRpcProvider> BlockHashCacheProvider<T> {
     pub fn new(client: T, ttl: Duration) -> Self {
         Self {
             inner: client,
@@ -21,7 +21,7 @@ impl<T: SolanaRpcProvider> BlockHashCacheProvider<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: SolanaRpcProvider + Send + Sync> SolanaRpcProvider for BlockHashCacheProvider<T> {
+impl<T: TransactionRpcProvider + Send + Sync> TransactionRpcProvider for BlockHashCacheProvider<T> {
     async fn get_latest_blockhash(&self) -> Result<Hash> {
         self.blockhash
             .try_get_with((), async {
@@ -72,8 +72,8 @@ mod tests {
     use {
         super::*,
         crate::{
-            SolanaRpcProvider,
             TransactionBuilder,
+            TransactionRpcProvider,
             rpc::{
                 CounterRpcProvider,
                 noop::{NoopRpc, NoopRpcNative},

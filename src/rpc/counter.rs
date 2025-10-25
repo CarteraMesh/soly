@@ -1,6 +1,6 @@
 use {
     super::RpcMethod,
-    crate::{CounterRpcProvider, Result, SolanaRpcProvider},
+    crate::{CounterRpcProvider, Result, TransactionRpcProvider},
     solana_hash::Hash,
     solana_message::AddressLookupTableAccount,
     solana_pubkey::Pubkey,
@@ -10,7 +10,7 @@ use {
     std::fmt::Display,
 };
 
-impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> Display for CounterRpcProvider<T> {
+impl<T: TransactionRpcProvider + AsRef<RpcClient> + Clone> Display for CounterRpcProvider<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let counters: Vec<_> = self
             .counters
@@ -21,7 +21,7 @@ impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> Display for CounterRpcProv
     }
 }
 
-impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> CounterRpcProvider<T> {
+impl<T: TransactionRpcProvider + AsRef<RpcClient> + Clone> CounterRpcProvider<T> {
     /// Get the counter for a given method
     pub fn get_counter(&self, method: &RpcMethod) -> u64 {
         match self.counters.get(method) {
@@ -40,7 +40,9 @@ impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> CounterRpcProvider<T> {
 }
 
 #[async_trait::async_trait]
-impl<T: SolanaRpcProvider + AsRef<RpcClient> + Clone> SolanaRpcProvider for CounterRpcProvider<T> {
+impl<T: TransactionRpcProvider + AsRef<RpcClient> + Clone> TransactionRpcProvider
+    for CounterRpcProvider<T>
+{
     async fn get_recent_prioritization_fees(
         &self,
         accounts: &[Pubkey],

@@ -48,13 +48,13 @@ impl<T: BorshSerialize> InstructionBuilderExt for InstructionBuilder<T> {
 ///
 /// # Examples
 /// ```no_run
-/// # use soly::{SolanaRpcProvider, NativeRpcWrapper};
+/// # use soly::{TransactionRpcProvider, NativeRpcWrapper};
 /// # use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 /// let rpc = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
 /// let provider: NativeRpcWrapper = rpc.into();
 /// ```
 #[async_trait::async_trait]
-pub trait SolanaRpcProvider: Send + Sync {
+pub trait TransactionRpcProvider: Send + Sync {
     async fn get_recent_prioritization_fees(
         &self,
         accounts: &[Pubkey],
