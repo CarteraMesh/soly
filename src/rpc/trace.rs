@@ -1,25 +1,25 @@
 use {
-    crate::{Error, Result, SolanaRpcProvider, TraceRpcNativeProvider},
+    crate::{Result, SolanaRpcProvider, TraceRpcNativeProvider},
     base64::prelude::*,
     solana_hash::Hash,
     solana_message::AddressLookupTableAccount,
     solana_pubkey::Pubkey,
+    solana_rpc_client::nonblocking::rpc_client::RpcClient,
     solana_rpc_client_api::response::RpcPrioritizationFee,
     solana_signature::Signature,
     tracing::debug,
 };
 
 #[async_trait::async_trait]
-impl SolanaRpcProvider for TraceRpcNativeProvider {
+impl<T: SolanaRpcProvider + AsRef<RpcClient> + Send + Sync + Clone> SolanaRpcProvider
+    for TraceRpcNativeProvider<T>
+{
     #[tracing::instrument(skip_all, level = tracing::Level::INFO)]
     async fn get_recent_prioritization_fees(
         &self,
         accounts: &[Pubkey],
     ) -> Result<Vec<RpcPrioritizationFee>> {
-        self.0
-            .get_recent_prioritization_fees(accounts)
-            .await
-            .map_err(|e| Error::SolanaRpcError(format!("failed to get prioritization fees: {e}")))
+        self.0.get_recent_prioritization_fees(accounts).await
     }
 
     #[tracing::instrument(skip_all, level = tracing::Level::INFO)]
@@ -32,10 +32,7 @@ impl SolanaRpcProvider for TraceRpcNativeProvider {
 
     #[tracing::instrument(skip_all, level = tracing::Level::INFO)]
     async fn get_latest_blockhash(&self) -> Result<Hash> {
-        self.0
-            .get_latest_blockhash()
-            .await
-            .map_err(|e| Error::SolanaRpcError(format!("failed to get latest blockhash: {e}")))
+        self.0.get_latest_blockhash().await
     }
 
     #[tracing::instrument(skip_all, level = tracing::Level::INFO)]
@@ -49,18 +46,7 @@ impl SolanaRpcProvider for TraceRpcNativeProvider {
             let transaction_base64 = BASE64_STANDARD.encode(bincode::serialize(&tx)?);
             debug!(simulate_tx =? transaction_base64);
         }
-        let result = self
-            .0
-            .simulate_transaction_with_config(tx, config)
-            .await
-            .map_err(|e| Error::SolanaRpcError(format!("failed to simulate transaction: {e}")))?;
-        if let Some(e) = result.value.err {
-            let logs = result.value.logs.unwrap_or(Vec::new());
-            let transaction_base64 = BASE64_STANDARD.encode(bincode::serialize(&tx)?);
-            let msg = format!("{e}\nbase64: {transaction_base64}\n{}", logs.join("\n"));
-            return Err(Error::SolanaSimulateFailure(msg));
-        }
-        Ok(result.value)
+        self.0.simulate_transaction(tx, config).await
     }
 
     #[tracing::instrument(skip_all, level = tracing::Level::INFO)]
@@ -69,36 +55,6 @@ impl SolanaRpcProvider for TraceRpcNativeProvider {
         tx: &solana_transaction::versioned::VersionedTransaction,
         config: Option<solana_rpc_client_api::config::RpcSendTransactionConfig>,
     ) -> Result<Signature> {
-        match config {
-            None => self
-                .0
-                .send_and_confirm_transaction(tx)
-                .await
-                .map_err(|e| Error::SolanaRpcError(format!("failed to send transaction: {e}"))),
-            Some(config) => {
-                let result = self
-                    .0
-                    .send_transaction_with_config(tx, config)
-                    .await
-                    .map_err(|e| {
-                        Error::SolanaRpcError(format!("failed to send transaction: {e}"))
-                    })?;
-
-                match self.0.confirm_transaction(&result).await {
-                    Err(e) => Err(Error::SolanaRpcError(format!(
-                        "failed to confirm transaction: {result} Error:{e}"
-                    ))),
-                    Ok(t) => {
-                        if t {
-                            Ok(result)
-                        } else {
-                            Err(Error::SolanaRpcError(format!(
-                                "Transaction is not confirmed: {result}"
-                            )))
-                        }
-                    }
-                }
-            }
-        }
+        self.0.send_and_confirm_transaction(tx, config).await
     }
 }

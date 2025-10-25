@@ -11,7 +11,6 @@ use {
     solana_instruction::Instruction,
     solana_message::AddressLookupTableAccount,
     solana_pubkey::Pubkey,
-    solana_rpc_client::nonblocking::rpc_client::RpcClient,
     solana_rpc_client_api::response::RpcPrioritizationFee,
     solana_signature::Signature,
 };
@@ -76,9 +75,6 @@ pub trait SolanaRpcProvider: Send + Sync {
         config: Option<solana_rpc_client_api::config::RpcSendTransactionConfig>,
     ) -> Result<Signature>;
 }
-
-/// Provides access to native [`RpcClient`] for composability
-pub trait SolanaRpcProviderNative: SolanaRpcProvider + AsRef<RpcClient> {}
 
 impl From<Instruction> for TransactionBuilder {
     fn from(instruction: Instruction) -> Self {

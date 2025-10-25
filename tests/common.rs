@@ -5,8 +5,11 @@ use {
     solana_pubkey::{Pubkey, pubkey},
     solana_rpc_client::nonblocking::rpc_client::RpcClient,
     solana_signer::Signer,
-    soly::TraceRpcNativeProvider,
-    std::{env, sync::Once},
+    soly::TraceRpcTransactionProvider,
+    std::{
+        env,
+        sync::{Arc, Once},
+    },
     tracing::trace,
     tracing_subscriber::{EnvFilter, fmt::format::FmtSpan},
 };
@@ -41,24 +44,28 @@ pub fn setup() {
     });
 }
 
-#[allow(clippy::expect_fun_call)]
-pub fn init() -> anyhow::Result<(Keypair, TraceRpcNativeProvider)> {
+pub fn init() -> anyhow::Result<(Keypair, TraceRpcTransactionProvider)> {
     setup();
     let owner = load_keypair()?;
+    let rpc: TraceRpcTransactionProvider = Arc::new(rpc_native()?).into();
+    Ok((owner, rpc))
+}
+
+#[allow(clippy::expect_fun_call)]
+pub fn rpc_native() -> anyhow::Result<RpcClient> {
     let url = env::var("RPC_URL").expect("RPC_URL is not set");
     trace!("using RPC {url}");
-    let rpc = RpcClient::new_with_commitment(url, CommitmentConfig::finalized());
-    Ok((owner, rpc.into()))
+    Ok(RpcClient::new_with_commitment(
+        url,
+        CommitmentConfig::finalized(),
+    ))
 }
 
 #[allow(clippy::expect_fun_call)]
 pub fn load_keypair() -> anyhow::Result<Keypair> {
     let kp_file = env::var("KEYPAIR_FILE").ok();
     let owner = if let Some(kp) = kp_file {
-        solana_keypair::read_keypair_file(&kp).expect(&format!(
-            "unable to load
-    keypair file {kp}"
-        ))
+        solana_keypair::read_keypair_file(&kp).expect(&format!("unable to load keypair file {kp}"))
     } else {
         let kp = env::var("TEST_PRIVATE_KEY").expect("TEST_PRIVATE_KEY is not set");
         Keypair::from_base58_string(&kp)

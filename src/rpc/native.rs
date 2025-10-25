@@ -1,22 +1,23 @@
 use {
-    crate::{Error, NativeRpcWrapper, Result, SolanaRpcProvider},
+    crate::{Error, Result, SolanaRpcProvider},
     base64::prelude::*,
     solana_hash::Hash,
     solana_message::AddressLookupTableAccount,
     solana_pubkey::Pubkey,
+    solana_rpc_client::nonblocking::rpc_client::RpcClient,
     solana_rpc_client_api::response::RpcPrioritizationFee,
     solana_signature::Signature,
     tracing::{debug, trace},
 };
 
 #[async_trait::async_trait]
-impl SolanaRpcProvider for NativeRpcWrapper {
+impl SolanaRpcProvider for std::sync::Arc<RpcClient> {
     async fn get_recent_prioritization_fees(
         &self,
         accounts: &[Pubkey],
     ) -> Result<Vec<RpcPrioritizationFee>> {
         debug!(accounts =? accounts.len(), "get_recent_prioritization_fees");
-        self.0
+        self.as_ref()
             .get_recent_prioritization_fees(accounts)
             .await
             .map_err(|e| Error::SolanaRpcError(format!("failed to get prioritization fees: {e}")))
@@ -27,12 +28,12 @@ impl SolanaRpcProvider for NativeRpcWrapper {
         pubkeys: &[Pubkey],
     ) -> Result<Vec<AddressLookupTableAccount>> {
         debug!(accounts =? pubkeys.len(), "calling get_lookup_table_accounts");
-        crate::lookup::fetch_lookup_tables(pubkeys, &self.0).await
+        crate::lookup::fetch_lookup_tables(pubkeys, &self).await
     }
 
     async fn get_latest_blockhash(&self) -> Result<Hash> {
         debug!("calling get_latest_blockhash");
-        self.0
+        self.as_ref()
             .get_latest_blockhash()
             .await
             .map_err(|e| Error::SolanaRpcError(format!("failed to get latest blockhash: {e}")))
@@ -44,7 +45,7 @@ impl SolanaRpcProvider for NativeRpcWrapper {
         config: solana_rpc_client_api::config::RpcSimulateTransactionConfig,
     ) -> Result<solana_rpc_client_api::response::RpcSimulateTransactionResult> {
         let result = self
-            .0
+            .as_ref()
             .simulate_transaction_with_config(tx, config)
             .await
             .map_err(|e| Error::SolanaRpcError(format!("failed to simulate transaction: {e}")))?;
@@ -68,20 +69,20 @@ impl SolanaRpcProvider for NativeRpcWrapper {
         }
         match config {
             None => self
-                .0
+                .as_ref()
                 .send_and_confirm_transaction(tx)
                 .await
                 .map_err(|e| Error::SolanaRpcError(format!("failed to send transaction: {e}"))),
             Some(config) => {
                 let result = self
-                    .0
+                    .as_ref()
                     .send_transaction_with_config(tx, config)
                     .await
                     .map_err(|e| {
                         Error::SolanaRpcError(format!("failed to send transaction: {e}"))
                     })?;
 
-                match self.0.confirm_transaction(&result).await {
+                match self.as_ref().confirm_transaction(&result).await {
                     Err(e) => Err(Error::SolanaRpcError(format!(
                         "failed to confirm transaction: {result} Error:{e}"
                     ))),

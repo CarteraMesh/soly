@@ -1,5 +1,5 @@
 use {
-    crate::{Result, SimpleCacheProvider, SolanaRpcProvider, SolanaRpcProviderNative},
+    crate::{Result, SimpleCacheProvider, SolanaRpcProvider},
     solana_hash::Hash,
     solana_message::AddressLookupTableAccount,
     solana_pubkey::Pubkey,
@@ -8,11 +8,8 @@ use {
 };
 
 #[async_trait::async_trait]
-impl<
-    T: SolanaRpcProviderNative,
-    L: SolanaRpcProvider + Send + Sync,
-    B: SolanaRpcProvider + Send + Sync,
-> SolanaRpcProvider for SimpleCacheProvider<T, L, B>
+impl<T: SolanaRpcProvider + Clone, L: SolanaRpcProvider, B: SolanaRpcProvider> SolanaRpcProvider
+    for SimpleCacheProvider<T, L, B>
 {
     async fn get_recent_prioritization_fees(
         &self,
