@@ -183,7 +183,12 @@ async fn test_simple_cache() -> anyhow::Result<()> {
     assert_eq!(1, counter_rpc.get_counter(&soly::RpcMethod::Lookup));
     assert_eq!(4, counter_rpc.get_counter(&soly::RpcMethod::Simulate));
 
-    let tx: TransactionBuilder = spl_memo::build_memo(MEMO_PKG.as_bytes(), &[&kp.pubkey()]).into();
+    let tx: TransactionBuilder = spl_memo_interface::instruction::build_memo(
+        &spl_memo_interface::v3::ID,
+        MEMO_PKG.as_bytes(),
+        &[&kp.pubkey()],
+    )
+    .into();
     let sig = tx.send(&rpc, &kp.pubkey(), &[&kp]).await;
     info!(sig = ?sig);
     accept_rpc_client_ref(&rpc);

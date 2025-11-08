@@ -167,7 +167,11 @@ impl TransactionBuilder {
 
     pub fn with_memo(mut self, memo: impl AsRef<[u8]>, signer_pubkeys: &[&Pubkey]) -> Self {
         self.instructions
-            .push(spl_memo::build_memo(memo.as_ref(), signer_pubkeys));
+            .push(spl_memo_interface::instruction::build_memo(
+                &spl_memo_interface::v3::ID,
+                memo.as_ref(),
+                signer_pubkeys,
+            ));
         self
     }
 
@@ -221,7 +225,7 @@ mod tests {
     #[test]
     fn test_with_memo() {
         let tx = TransactionBuilder::default();
-        let pk = spl_memo::id();
+        let pk = spl_memo_interface::v1::ID;
         let signer_pubkey = [&pk];
         let ref_msg = &[72, 101, 108, 108, 111];
         let tx = tx

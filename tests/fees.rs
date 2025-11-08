@@ -23,7 +23,10 @@ async fn test_fee_with_default_percentile() -> anyhow::Result<()> {
         .with_priority_fees(
             &payer,
             &rpc,
-            &[solana_system_interface::program::ID, spl_memo::ID],
+            &[
+                solana_system_interface::program::ID,
+                spl_memo_interface::v3::id(),
+            ],
             1_000_000,
             None,
         )
@@ -48,7 +51,10 @@ async fn test_fee_with_max_priority() -> anyhow::Result<()> {
         .with_priority_fees(
             &payer,
             &rpc,
-            &[solana_system_interface::program::ID, spl_memo::ID],
+            &[
+                solana_system_interface::program::ID,
+                spl_memo_interface::v3::ID,
+            ],
             u64::MAX,
             None,
         )
@@ -102,7 +108,10 @@ async fn test_fee_with_priority_fees() -> anyhow::Result<()> {
         .with_priority_fees(
             &payer,
             &rpc,
-            &[solana_system_interface::program::ID, spl_memo::ID],
+            &[
+                solana_system_interface::program::ID,
+                spl_memo_interface::v3::ID,
+            ],
             1_000_000,
             Some(50),
         )

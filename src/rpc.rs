@@ -314,6 +314,12 @@ mod noop {
                 return_data: None,
                 inner_instructions: None,
                 replacement_blockhash: None,
+                fee: None,
+                loaded_addresses: None,
+                post_balances: None,
+                pre_balances: None,
+                pre_token_balances: None,
+                post_token_balances: None,
             })
         }
 

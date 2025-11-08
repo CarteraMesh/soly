@@ -55,7 +55,7 @@ async fn test_instruction_builder() -> anyhow::Result<()> {
     let memo: MemoData = "Hello, World!".into();
     let accounts = vec![AccountMeta::new_readonly(kp.pubkey(), true)];
     let sig = InstructionBuilder::builder()
-        .program_id(spl_memo::id())
+        .program_id(spl_memo_interface::v3::id())
         .accounts(accounts)
         .params(memo)
         .build()
@@ -73,7 +73,7 @@ async fn test_transaction_builder_single_instruction() -> anyhow::Result<()> {
     let accounts = vec![AccountMeta::new_readonly(kp.pubkey(), true)];
 
     let instruction_builder = InstructionBuilder::builder()
-        .program_id(spl_memo::id())
+        .program_id(spl_memo_interface::v3::id())
         .accounts(accounts)
         .params(memo)
         .build();
@@ -99,17 +99,17 @@ async fn test_transaction_builder_multiple_instructions() -> anyhow::Result<()> 
 
     let builders = vec![
         InstructionBuilder::builder()
-            .program_id(spl_memo::id())
+            .program_id(spl_memo_interface::v3::id())
             .accounts(accounts.clone())
             .params(memo1)
             .build(),
         InstructionBuilder::builder()
-            .program_id(spl_memo::id())
+            .program_id(spl_memo_interface::v3::id())
             .accounts(accounts.clone())
             .params(memo2)
             .build(),
         InstructionBuilder::builder()
-            .program_id(spl_memo::id())
+            .program_id(spl_memo_interface::v3::id())
             .accounts(accounts.clone())
             .params(memo3)
             .build(),
@@ -135,7 +135,7 @@ fn test_remaining_accounts() {
     ];
 
     let instruction_builder = InstructionBuilder::builder()
-        .program_id(spl_memo::id())
+        .program_id(spl_memo_interface::v3::id())
         .accounts(base_accounts.clone())
         .params(memo)
         .build()
@@ -148,7 +148,7 @@ fn test_remaining_accounts() {
         instruction.accounts.len(),
         base_accounts.len() + remaining_accounts.len()
     );
-    assert_eq!(instruction.program_id, spl_memo::id());
+    assert_eq!(instruction.program_id, spl_memo_interface::v3::id());
 }
 
 #[tokio::test]
@@ -158,7 +158,7 @@ async fn test_empty_memo() -> anyhow::Result<()> {
     let accounts = vec![AccountMeta::new_readonly(kp.pubkey(), true)];
 
     let instruction_builder = InstructionBuilder::builder()
-        .program_id(spl_memo::id())
+        .program_id(spl_memo_interface::v3::id())
         .accounts(accounts)
         .params(memo)
         .build();
@@ -176,13 +176,13 @@ fn test_instruction_creation() {
     let accounts = vec![AccountMeta::new_readonly(Pubkey::new_unique(), true)];
 
     let builder = InstructionBuilder::builder()
-        .program_id(spl_memo::id())
+        .program_id(spl_memo_interface::v3::id())
         .accounts(accounts.clone())
         .params(memo)
         .build();
 
     let instruction = builder.instruction();
-    assert_eq!(instruction.program_id, spl_memo::id());
+    assert_eq!(instruction.program_id, spl_memo_interface::v3::id());
     assert_eq!(instruction.accounts.len(), accounts.len());
 }
 
@@ -192,14 +192,14 @@ fn test_transaction_builder_creation() {
     let accounts = vec![AccountMeta::new_readonly(Pubkey::new_unique(), true)];
 
     let builder = InstructionBuilder::builder()
-        .program_id(spl_memo::id())
+        .program_id(spl_memo_interface::v3::id())
         .accounts(accounts)
         .params(memo)
         .build();
 
     let tx: TransactionBuilder = builder.into();
     assert_eq!(tx.instructions.len(), 1);
-    assert_eq!(tx.instructions[0].program_id, spl_memo::id());
+    assert_eq!(tx.instructions[0].program_id, spl_memo_interface::v3::id());
 }
 
 #[test]
@@ -208,7 +208,7 @@ fn test_extend_instruction() {
     let accounts = vec![AccountMeta::new_readonly(Pubkey::new_unique(), true)];
 
     let ix = InstructionBuilder::builder()
-        .program_id(spl_memo::id())
+        .program_id(spl_memo_interface::v3::id())
         .accounts(accounts)
         .params(memo)
         .build()
@@ -218,6 +218,6 @@ fn test_extend_instruction() {
     tx.extend(vec![ix.clone(), ix.clone()]);
 
     assert_eq!(tx.instructions.len(), 2);
-    assert_eq!(tx.instructions[0].program_id, spl_memo::id());
-    assert_eq!(tx.instructions[1].program_id, spl_memo::id());
+    assert_eq!(tx.instructions[0].program_id, spl_memo_interface::v3::id());
+    assert_eq!(tx.instructions[1].program_id, spl_memo_interface::v3::id());
 }

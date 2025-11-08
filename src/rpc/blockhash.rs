@@ -111,8 +111,12 @@ mod tests {
             .await?;
 
         let kp = Keypair::new();
-        let tx: TransactionBuilder =
-            spl_memo::build_memo(String::from("memo").as_bytes(), &[&kp.pubkey()]).into();
+        let tx: TransactionBuilder = spl_memo_interface::instruction::build_memo(
+            &spl_memo_interface::v3::ID,
+            String::from("memo").as_bytes(),
+            &[&kp.pubkey()],
+        )
+        .into();
         let tx = tx.unsigned_tx(&kp.pubkey(), &hash_cache).await?;
 
         let _ = hash_cache
